@@ -1,0 +1,12 @@
+.DS_Store
+*.tgz
+*.pdf
+*.log
+*.tmp
+*.swp
+*~
+node_modules/
+.env
+
+# PNG icone: generati da .github/workflows/pages.yml dagli SVG
+icons/*.png
