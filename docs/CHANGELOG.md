@@ -48,4 +48,3 @@
 ## RAK-10 — Git + primo push (2026-11-16)
 - `git init` (branch main), `.gitignore` (.DS_Store, *.tgz, *.pdf, log/tmp, icons/*.png), `README.md` breve, remote `origin` = https://github.com/ucci2d/gintro. Controllo pre-commit: solo file di `app/`, nessun PDF, nessun dato paziente (solo «Cliente demo»). `credential.helper` vuoto: nessun Portachiavi.
 - `git push` non ha credenziali: il push è fatto con `push_files` della connessione GitHub di Paperclip (MCP), in più commit consecutivi «Primo commit … (parte n/7)». I PNG delle icone non sono nel repo: li genera `.github/workflows/pages.yml` dagli SVG (192, 512, maskable 512, apple-touch 180) e pubblica su GitHub Pages (https://ucci2d.github.io/gintro/). Se il workflow fallisce con errore Pages: Settings → Pages → Source = «GitHub Actions».
-- `store.js`: nel regex di `normalize` i diacritici sono scritti `̀-ͯ` (stesso comportamento).

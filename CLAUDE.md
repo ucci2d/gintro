@@ -94,3 +94,7 @@ Categorie libreria: Gambe e glutei, Core, Schiena, Petto, Spalle, Braccia, Total
 - Un task alla volta. Niente esplorazioni inutili: leggi solo i file che servono.
 - Non rigenerare file grandi interi se basta una modifica mirata.
 - A task finito, fermati e riporta in 3–5 righe cosa hai fatto e cosa resta.
+
+## 11. Sicurezza del Mac (vincolo del committente)
+- **Vietato accedere al Portachiavi di macOS** (keychain) o lanciare comandi che aprono richieste di password/accesso: niente `git-credential-osxkeychain`, `security`, ecc. In questo repo `credential.helper` deve essere vuoto; per GitHub usa solo le credenziali della connessione GitHub di Paperclip. Se mancano, metti il task in blocked.
+- Non leggere né modificare nulla fuori da questa cartella.
