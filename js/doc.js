@@ -1,6 +1,6 @@
 // Documento cliente (A4), stampa/PDF e testo WhatsApp (brief §7).
 import * as store from './store.js';
-import { labels, rxSummary } from './editor.js';
+import { labels, rxSummary, weekLabel } from './editor.js';
 
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const safeUrl = u => /^https?:\/\//i.test(u || '') ? u : '';
@@ -38,7 +38,7 @@ function blockHtml(b, showLoad) {
 export function buildDocHtml(plan, client, s) {
   const color = safeColor(s.accent), showLoad = s.showLoadColumn !== false;
   const trainer = s.trainerName || '';
-  const info = [['Obiettivo', plan.goal], ['Informazioni', plan.info], ['Frequenza', plan.frequency]].filter(x => x[1]);
+  const info = [['Obiettivo', plan.goal], ['Informazioni', plan.info], ['Frequenza', plan.frequency], ['Settimana', weekLabel(plan)]].filter(x => x[1]);
   const text = (t, v) => v ? `<section class="doc-text"><h3>${t}</h3><p>${nl(v)}</p></section>` : '';
   return `<article class="doc" style="--doc-accent:${color}">
     <header class="doc-head">
@@ -64,6 +64,7 @@ export function buildWhatsApp(plan, client, s) {
   if (plan.goal) L.push(`*Obiettivo:* ${plan.goal}`);
   if (plan.info) L.push(`*Informazioni:* ${plan.info}`);
   if (plan.frequency) L.push(`*Frequenza:* ${plan.frequency}`);
+  if (weekLabel(plan)) L.push(`*Settimana:* ${weekLabel(plan).replace(/^Settimana /, '')}`);
   if (plan.warmup) L.push('', `*Riscaldamento*`, plan.warmup);
   for (const d of plan.days || []) {
     L.push('', `*${d.name.toUpperCase()}*`);
