@@ -53,12 +53,13 @@ export async function openSheet({ item = null, plan = null, onSave }) {
     const res = rank(exercises, q, usage, cat);
     const top = !q && !cat;
     const create = store.normalize(q) && !exercises.some(e => store.normalize(e.n) === store.normalize(q));
-    dlg.innerHTML = `<div class="sh-body"><div class="sh-head"><strong>Aggiungi esercizio</strong>${added ? `<span class="sh-added">${added} aggiunt${added > 1 ? 'i' : 'o'}</span>` : ''}<button type="button" class="btn-x" data-a="close" aria-label="Chiudi">✕</button></div>
+    dlg.classList.add('sh-tall');
+    dlg.innerHTML = `<div class="sh-body sh-search"><div class="sh-head"><strong>Aggiungi esercizio</strong>${added ? `<span class="sh-added">${added} aggiunt${added > 1 ? 'i' : 'o'}</span>` : ''}<button type="button" class="btn-x" data-a="close" aria-label="Chiudi">✕</button></div>
       <input class="inp" id="sh-q" type="search" value="${esc(q)}" placeholder="Cerca esercizio…" autocomplete="off" aria-label="Cerca esercizio">
       <div class="chips">${CATEGORIES.map(c => `<button type="button" class="chip chip-s" data-cat="${esc(c)}" aria-pressed="${cat === c}">${esc(c)}</button>`).join('')}</div>
       ${top ? '<div class="sh-sub">Più usati</div>' : ''}
       <ul class="ed-res">${res.map((e, i) => `<li><button type="button" class="btn" data-pick="${i}">${esc(e.n)}${usage[e.id] ? ` <small>×${usage[e.id]}</small>` : ''}</button></li>`).join('')}
-        ${create ? `<li><button type="button" class="btn btn-accent" data-a="create">Crea «${esc(q.trim())}»</button></li>` : ''}</ul>
+        ${create ? `<li><button type="button" class="btn${res.length ? '' : ' btn-accent'}" data-a="create">Crea «${esc(q.trim())}»</button></li>` : ''}</ul>
       ${!res.length && !create ? '<p class="sh-sub">Nessun risultato.</p>' : ''}</div>`;
     const inp = dlg.querySelector('#sh-q');
     inp.oninput = () => { q = inp.value; const pos = q.length; drawSearch(); const n = dlg.querySelector('#sh-q'); n.focus(); n.setSelectionRange(pos, pos); };
@@ -86,6 +87,7 @@ export async function openSheet({ item = null, plan = null, onSave }) {
   }
 
   function drawForm() {
+    dlg.classList.remove('sh-tall');
     const vids = [...new Set([...(it._vids || []), it.video].filter(Boolean))];
     dlg.innerHTML = `<form class="sh-body" method="dialog"><div class="sh-head"><strong class="sh-name">${esc(it.name)}</strong>
         ${isEdit ? '' : '<button type="button" class="btn" data-a="back">Cambia</button>'}<button type="button" class="btn-x" data-a="close" aria-label="Chiudi">✕</button></div>

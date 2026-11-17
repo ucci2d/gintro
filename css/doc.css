@@ -30,6 +30,21 @@ a.doc-name{text-decoration:underline;text-decoration-color:var(--doc-accent);tex
 .doc-final{margin-top:14px;padding:10px 12px;border-left:4px solid var(--doc-accent);background:#f6f8f8;font-weight:500;break-inside:avoid;-webkit-print-color-adjust:exact;print-color-adjust:exact}
 .doc-foot{margin-top:12px;padding-top:8px;border-top:1px solid #d6d9dd;font-size:8.5pt;color:var(--soft);text-align:center}
 
+/* Schermi stretti (solo a schermo, la stampa resta A4): reflow */
+@media screen and (max-width:640px){
+  .doc{padding:14px 12px;font-size:10pt;overflow-wrap:anywhere}
+  .doc-head{flex-wrap:wrap;gap:8px}
+  .doc-title{font-size:16pt}
+  .doc-info div{flex-direction:column;gap:0}.doc-info dt{min-width:0}
+  .doc-bh{flex-wrap:wrap}
+  .doc-cols{display:none}
+  .doc-it{flex-wrap:wrap}
+  .doc-body{flex:1 1 0}
+  .doc-pill{display:block;width:fit-content;max-width:100%;margin:4px 0 0;white-space:normal}
+  .doc-load{flex:1 1 100%;width:auto;margin:2px 0 0 30px;height:30px;align-self:stretch}
+  .doc-dlg-body{padding:8px}
+}
+
 /* Editor: pulsanti e anteprima affiancata */
 .ed-tools{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 12px}
 .ed-prev{display:none}

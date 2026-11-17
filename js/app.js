@@ -1,6 +1,7 @@
 import * as store from './store.js';
 import { renderLibrary } from './library.js';
 import { renderEditor } from './editor.js';
+import { renderSettings } from './settings.js';
 import { renderHome, renderClients } from './plans.js';
 // Shell dell'app: navigazione, routing con hash e registrazione del service worker.
 const ICONS = {
@@ -49,7 +50,7 @@ function render() {
     [title, sub, emptyT, emptyD] = VIEWS[r.name];
   }
   if (r.name === 'scheda') { setNav(r, 'Scheda'); return renderEditor(view, r.id); }
-  if (r.name === 'impostazioni') { setNav(r, title); return renderSettings(title, sub); }
+  if (r.name === 'impostazioni') { setNav(r, title); return renderSettings(view, title, sub); }
   if (r.name === 'schede') { setNav(r, title); return renderHome(view); }
   if (r.name === 'iscritti') { setNav(r, title); return renderClients(view); }
   if (r.name === 'libreria') { setNav(r, title); return renderLibrary(view); }
@@ -63,25 +64,6 @@ function setNav(r, title) {
   });
   document.title = `${title} · Rakan`;
   window.scrollTo(0, 0);
-}
-
-async function renderSettings(title, sub) {
-  view.innerHTML = `<h1 class="view-title">${title}</h1><p class="view-sub">${sub}</p>
-    <div class="empty"><strong>Backup dati</strong>I dati restano su questo dispositivo: esporta un backup per sicurezza.<br><br>
-    <button id="bk-exp" class="btn" style="min-height:44px;padding:0 16px">Esporta backup</button>
-    <label class="btn" style="display:inline-block;min-height:44px;line-height:44px;padding:0 16px;cursor:pointer">Importa backup<input id="bk-imp" type="file" accept="application/json" hidden></label>
-    <p id="bk-msg" role="status"></p></div>`;
-  const msg = document.getElementById('bk-msg');
-  document.getElementById('bk-exp').onclick = async () => {
-    const url = URL.createObjectURL(new Blob([await store.exportBackup()], { type: 'application/json' }));
-    const a = Object.assign(document.createElement('a'), { href: url, download: `rakan-backup-${new Date().toISOString().slice(0, 10)}.json` });
-    a.click(); URL.revokeObjectURL(url); msg.textContent = 'Backup esportato.';
-  };
-  document.getElementById('bk-imp').onchange = async e => {
-    const f = e.target.files[0]; if (!f) return;
-    if (!confirm('L\'importazione sostituisce tutti i dati attuali. Continuare?')) return;
-    try { await store.importBackup(await f.text()); msg.textContent = 'Backup importato.'; } catch (err) { msg.textContent = 'Errore: ' + err.message; }
-  };
 }
 
 window.addEventListener('hashchange', render);

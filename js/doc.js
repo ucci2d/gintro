@@ -37,13 +37,13 @@ function blockHtml(b, showLoad) {
 
 export function buildDocHtml(plan, client, s) {
   const color = safeColor(s.accent), showLoad = s.showLoadColumn !== false;
-  const trainer = s.trainerName || 'Personal trainer';
+  const trainer = s.trainerName || '';
   const info = [['Obiettivo', plan.goal], ['Informazioni', plan.info], ['Frequenza', plan.frequency]].filter(x => x[1]);
   const text = (t, v) => v ? `<section class="doc-text"><h3>${t}</h3><p>${nl(v)}</p></section>` : '';
   return `<article class="doc" style="--doc-accent:${color}">
     <header class="doc-head">
       ${s.logoDataUrl?.startsWith('data:image/') ? `<img class="doc-logo" src="${esc(s.logoDataUrl)}" alt="">` : ''}
-      <div class="doc-who"><strong>${esc(trainer)}</strong>${s.studio ? `<span>${esc(s.studio)}</span>` : ''}</div>
+      <div class="doc-who">${trainer ? `<strong>${esc(trainer)}</strong>` : ''}${s.studio ? `<span>${esc(s.studio)}</span>` : ''}</div>
       <div class="doc-date">${esc(fmtDate(plan.date))}</div>
     </header>
     <h1 class="doc-title">${esc(plan.title || ('Programmazione ' + (client?.name || '')).trim())}</h1>
@@ -83,7 +83,9 @@ export function buildWhatsApp(plan, client, s) {
   }
   if (plan.cooldown) L.push('', '*Defaticamento*', plan.cooldown);
   if (plan.finalNote) L.push('', plan.finalNote);
-  if (s.trainerName) L.push('', `— ${s.trainerName}`);
+  const sig = [s.trainerName, s.studio].filter(Boolean).join(' · ');
+  if (sig) L.push('', `— ${sig}`);
+  if (s.footerNote) L.push(s.footerNote);
   return L.join('\n');
 }
 
