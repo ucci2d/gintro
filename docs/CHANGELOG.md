@@ -67,3 +67,9 @@
 - Fix: dopo «Importa backup» la schermata Impostazioni si ridisegna subito con i dati importati.
 - Nuovo `js/install.js` (si avvia da solo, importato da settings.js): sezione «Installa Rakan sul telefono» in Impostazioni (passi iPhone/Android, pulsante «Installa» via `beforeinstallprompt`); banner discreto chiudibile una sola volta su iPhone/Safari non installato (chiusura in localStorage con try/catch); gli stili del modulo sono iniettati da `install.js` (nessuna modifica a `app.css`). `sw.js` v11.
 - `docs/INSTALLAZIONE.md` per Gianluca. Meta iOS verificati in `index.html` (apple-touch-icon, capable, theme-color, title); le PNG sono quelle generate dal workflow e referenziate correttamente.
+
+## RAK-14 — v1.5-A: link cliente «App del paziente» (2026-11-17)
+- Nuovo `js/share.js` + pulsante «Invia al cliente» nell'editor: genera `https://ucci2d.github.io/gintro/#c=<dati>`; la scheda (solo campi per il cliente: niente `info`/anamnesi, id, logo) è compressa con `CompressionStream('deflate-raw')` + base64url nel frammento `#`, quindi non arriva mai a un server. Condividi (Web Share API se disponibile), Copia link, WhatsApp (`wa.me`); sopra 6000 caratteri avviso + pulsante Stampa / PDF.
+- Nuovo `js/client.js` + `css/client.css`: vista cliente chiara e mobile-first (senza menu): giorni → blocchi → esercizi con nome, prescrizione, note, ▶ (modale con embed `youtube-nocookie`, fallback link; per URL non YouTube solo link). Il cliente spunta le serie, scrive il carico per esercizio, segna l'allenamento (giorno) completato con data (e può annullare). Tutto in localStorage con chiave = hash del link (`rakan-cl-…`). Pulsante «Installa sul telefono» (via `install.js`) e banner iPhone. Link non valido → messaggio.
+- `app.js`: con `#c=` nasconde la navigazione e non inizializza lo store/dati demo. `sw.js` v12.
+- Limite: l'app installata riparte da `start_url` (senza il link): il cliente riapre il link dal messaggio.
