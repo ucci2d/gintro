@@ -1,7 +1,7 @@
 // Libreria esercizi: ricerca istantanea, filtri categoria, lista paginata, scheda esercizio, nuovo esercizio, import multiplo.
 import * as store from './store.js';
 import { toast } from './ui.js';
-import { videoField, parseVideo, thumbOf } from './video.js';
+import { videoField, parseVideo, thumbOf, playVideo, isBrokenYt } from './video.js';
 
 export const CATEGORIES = ['Gambe e glutei', 'Core', 'Schiena', 'Petto', 'Spalle', 'Braccia', 'Total body', 'Cardio e metabolico', 'Mobilità', 'Respirazione'];
 const PAGE = 40;
@@ -97,10 +97,10 @@ export async function renderLibrary(view) {
     const res = matches();
     $('lib-count').textContent = `${res.length} esercizi${res.length !== all.length ? ` su ${all.length}` : ''}`;
     $('lib-list').innerHTML = res.slice(0, st.shown).map(e => `
-      <li><button class="lib-row" data-id="${esc(e.id)}">
+      <li class="lib-li"><button class="lib-row" data-id="${esc(e.id)}">
         <span class="lib-name">${esc(e.n)}${e.custom ? ' <em class="tag">custom</em>' : ''}</span>
         <span class="lib-meta">${esc(e.c)} · ${e.v?.length ? e.v.length + ' video' : '<b>nessun video</b>'}</span>
-      </button></li>`).join('') || '<li class="empty"><strong>Nessun risultato</strong>Prova altre parole o crea un nuovo esercizio.</li>';
+      </button>${thumbOf(e.v?.[0]) ? `<button type="button" class="lib-play" data-play="${esc(e.id)}" aria-label="Guarda il video di ${esc(e.n)}"><img src="${esc(thumbOf(e.v[0]))}" alt="" width="64" height="36" loading="lazy" decoding="async" onerror="this.parentNode.remove()"><span aria-hidden="true">▶</span></button>` : ''}</li>`).join('') || '<li class="empty"><strong>Nessun risultato</strong>Prova altre parole o crea un nuovo esercizio.</li>';
     $('lib-more').hidden = res.length <= st.shown;
     $('lib-more').textContent = `Mostra altri (${res.length - st.shown})`;
   }
@@ -109,7 +109,7 @@ export async function renderLibrary(view) {
   $('lib-q').oninput = e => { clearTimeout(t); t = setTimeout(() => { st.q = e.target.value; st.shown = PAGE; draw(); }, 60); };
   $('lib-chips').onclick = e => { const b = e.target.closest('.chip'); if (!b) return; st.cat = b.dataset.cat; st.shown = PAGE; draw(); };
   $('lib-more').onclick = () => { st.shown += PAGE; draw(); };
-  $('lib-list').onclick = e => { const b = e.target.closest('.lib-row'); if (b) openDetail(all.find(x => x.id === b.dataset.id)); };
+  $('lib-list').onclick = e => { const pl = e.target.closest('.lib-play'); if (pl) { const x = all.find(z => z.id === pl.dataset.play); if (x) playVideo(x.v[0], x.n); return; } const b = e.target.closest('.lib-row'); if (b) openDetail(all.find(x => x.id === b.dataset.id)); };
   $('lib-new').onclick = () => openDetail(null, st.q);
   $('lib-imp').onclick = openImport;
 
@@ -141,13 +141,13 @@ export async function renderLibrary(view) {
     sel.onchange = () => catTouched = true;
     f.n.oninput = () => { if (!catTouched) { const s = suggestCategory(f.n.value, all); if (s) sel.value = s; } };
     const drawVids = () => dlg.querySelector('#vids').innerHTML = videos.map((u, i) =>
-      `<li>${thumbOf(u) ? `<img src="${esc(thumbOf(u))}" alt="" width="64" height="36" loading="lazy" onerror="this.remove()">` : ''}<a href="${esc(u)}" target="_blank" rel="noopener">▶ ${esc(u.replace(/^https?:\/\/(www\.|m\.)?/, '').slice(0, 42))}</a><button type="button" class="btn-x" data-rm="${i}" aria-label="Rimuovi video">✕</button></li>`).join('');
+      `<li>${thumbOf(u) ? `<img src="${esc(thumbOf(u))}" alt="" width="64" height="36" loading="lazy" onerror="this.remove()">` : ''}<button type="button" class="vl-play" data-play="${i}" aria-label="Guarda il video">${thumbOf(u) ? '' : '▶ '}<span>${esc(u.replace(/^https?:\/\/(www\.|m\.)?/, '').slice(0, 42))}</span></button><button type="button" class="btn-x" data-rm="${i}" aria-label="Rimuovi video">✕</button></li>`).join('');
     drawVids();
-    dlg.querySelector('#vids').onclick = e => { const b = e.target.closest('[data-rm]'); if (b) { videos.splice(+b.dataset.rm, 1); drawVids(); } };
+    dlg.querySelector('#vids').onclick = e => { const pl = e.target.closest('[data-play]'); if (pl) return playVideo(videos[+pl.dataset.play], f.n.value); const b = e.target.closest('[data-rm]'); if (b) { videos.splice(+b.dataset.rm, 1); drawVids(); } };
     f.url.onkeydown = e => { if (e.key === 'Enter') { e.preventDefault(); addUrl(); } };
     const addUrl = () => {
       const u0 = f.url.value.trim(); if (!u0) return true;
-      const u = parseVideo(u0)?.url;
+      const u = isBrokenYt(u0) ? '' : parseVideo(u0)?.url;
       if (!u) { msg.textContent = 'Non sembra un link: incolla l\'indirizzo del video.'; return false; }
       if (!videos.includes(u)) videos.push(u);
       f.url.value = ''; f.url.dispatchEvent(new Event('input')); msg.textContent = ''; drawVids(); return true;
