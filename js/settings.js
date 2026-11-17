@@ -1,5 +1,6 @@
 // Impostazioni trainer (brief §4 Settings) + backup dati.
 import * as store from './store.js';
+import { exportBackupFile, importBackupFile } from './backup.js';
 import { toast } from './ui.js';
 import { canPrompt, onChange, promptInstall } from './install.js';
 
@@ -48,9 +49,9 @@ export async function renderSettings(view, title, sub) {
       <p class="set-help"><strong>Android</strong> (Chrome): tocca ⋮ → «Installa app» o «Aggiungi a schermata Home».</p>
       <div><button type="button" class="btn" id="set-install" hidden style="min-height:44px;padding:0 16px">Installa</button></div>
     </section>
-    <section class="empty"><strong>Backup dati</strong>I dati restano su questo dispositivo: esporta un backup per sicurezza.<br><br>
+    <section class="empty"><strong>Backup dati</strong>I dati restano su questo dispositivo. «Esporta» crea un file che puoi salvare su iCloud Drive / Google Drive o mandarti su WhatsApp; «Importa» lo <strong>unisce</strong> ai dati di questo dispositivo senza perdere nulla (in caso di conflitto vince la versione più recente).<br><br>
     <button id="bk-exp" class="btn" style="min-height:44px;padding:0 16px">Esporta backup</button>
-    <label class="btn" style="display:inline-block;min-height:44px;line-height:44px;padding:0 16px;cursor:pointer">Importa backup<input id="bk-imp" type="file" accept="application/json" hidden></label>
+    <label class="btn" style="display:inline-block;min-height:44px;line-height:44px;padding:0 16px;cursor:pointer">Importa backup<input id="bk-imp" type="file" accept="application/json,.json" hidden></label>
     <p id="bk-msg" role="status"></p></section>`;
     wire();
   };
@@ -71,14 +72,15 @@ export async function renderSettings(view, title, sub) {
     const off = onChange(() => { if (ib.isConnected) sync(); else off(); });
     const msg = document.getElementById('bk-msg');
     document.getElementById('bk-exp').onclick = async () => {
-      const url = URL.createObjectURL(new Blob([await store.exportBackup()], { type: 'application/json' }));
-      const a = Object.assign(document.createElement('a'), { href: url, download: `rakan-backup-${new Date().toISOString().slice(0, 10)}.json` });
-      a.click(); URL.revokeObjectURL(url); msg.textContent = 'Backup esportato.'; toast('Backup esportato');
+      try {
+        const how = await exportBackupFile();
+        if (how === 'cancelled') return;
+        msg.textContent = how === 'shared' ? 'Backup condiviso.' : 'Backup scaricato: spostalo sull\'altro dispositivo (iCloud Drive, Google Drive, WhatsApp a te stesso…).'; toast('Backup pronto');
+      } catch (err) { msg.textContent = 'Errore: ' + err.message; }
     };
     document.getElementById('bk-imp').onchange = async e => {
-      const f = e.target.files[0]; if (!f) return;
-      if (!confirm('L\'importazione sostituisce tutti i dati attuali. Continuare?')) return;
-      try { await store.importBackup(await f.text()); s = await store.getSettings(); draw(); document.getElementById('bk-msg').textContent = 'Backup importato.'; toast('Backup importato'); } catch (err) { msg.textContent = 'Errore: ' + err.message; }
+      const f = e.target.files[0]; e.target.value = ''; if (!f) return;
+      try { const t = await importBackupFile(f); msg.textContent = t; toast('Backup importato'); } catch (err) { msg.textContent = 'Errore: ' + err.message; }
     };
   }
   draw();
