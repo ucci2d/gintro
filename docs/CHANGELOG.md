@@ -61,3 +61,9 @@
 - Editor: intestazione chiusa di default per schede duplicate o da modello, aperta per la scheda vuota (decisione per scheda); freccia sul riepilogo.
 - Transizioni leggere (cambio vista, dialog, sheet, bottoni) disattivate con `prefers-reduced-motion`. `sw.js` v10.
 - QA completo in `docs/QA.md` (Chrome headless 390 e 1400px, nessun errore in console).
+
+## RAK-13 — Fase 3: installazione su telefono + fix import (2026-11-17)
+- Repo locale riallineato a `origin/main` (`fetch` + `reset --hard`, senza credenziali).
+- Fix: dopo «Importa backup» la schermata Impostazioni si ridisegna subito con i dati importati.
+- Nuovo `js/install.js` (si avvia da solo, importato da settings.js): sezione «Installa Rakan sul telefono» in Impostazioni (passi iPhone/Android, pulsante «Installa» via `beforeinstallprompt`); banner discreto chiudibile una sola volta su iPhone/Safari non installato (chiusura in localStorage con try/catch); gli stili del modulo sono iniettati da `install.js` (nessuna modifica a `app.css`). `sw.js` v11.
+- `docs/INSTALLAZIONE.md` per Gianluca. Meta iOS verificati in `index.html` (apple-touch-icon, capable, theme-color, title); le PNG sono quelle generate dal workflow e referenziate correttamente.
