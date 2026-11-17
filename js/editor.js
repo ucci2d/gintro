@@ -4,6 +4,7 @@ import { openSheet } from './sheet.js';
 import { renderPreview, openPreview, printPlan, copyWhatsApp } from './doc.js';
 import { toast } from './ui.js';
 import { openShare } from './share.js';
+import { openQuick } from './quick.js';
 
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 export const BLOCK_TITLES = ['Mobilità', 'Mobilità + Core', 'Stabilità', 'Respirazione', 'Allenamento forza', 'Circuito', 'Addome'];
@@ -120,7 +121,7 @@ function blockHtml(b, bi, n) {
     </div>
     ${b.kind === 'circuito' ? `<div class="ed-circ"><label>Giri<input class="inp" data-bf="rounds" value="${esc(b.rounds)}" placeholder="3 o 2/3"></label><label>Recupero a fine giro<input class="inp" data-bf="rest" value="${esc(b.rest)}" placeholder="1'30&quot;"></label></div>` : ''}
     <ul class="ed-items">${b.items.map((it, i) => itemHtml(it, i, lab[i], b.items.length)).join('')}</ul>
-    <button class="btn" data-act="item-add">+ Esercizio</button>
+    <div class="ed-addrow"><button class="btn btn-accent" data-act="item-quick">⚡ Scrivi veloce</button><button class="btn" data-act="item-add">+ Esercizio</button></div>
   </section>`;
 }
 
@@ -177,6 +178,13 @@ function onClick(e) {
     case 'blk-del': if (!b.items.length || confirm('Eliminare il blocco e i suoi esercizi?')) { d.blocks.splice(bi, 1); done(); } return;
     case 'item-more': { const o = li.classList.toggle('open'); t.setAttribute('aria-expanded', o); return; }
     case 'item-add': return editItem(b, null);
+    case 'item-quick': return openQuick({ block: b, plan, deps: { newItem, rxSummary, labels } }).then(r => {
+      if (!r?.items.length) return;
+      b.items.push(...r.items); fix(b.items);
+      if (r.meta.rounds) { b.rounds = r.meta.rounds; b.kind = 'circuito'; }
+      if (r.meta.rest && b.kind === 'circuito') b.rest = r.meta.rest;
+      toast(`${r.items.length} esercizi aggiunti`); done();
+    });
     case 'item-edit': return editItem(b, i);
     case 'item-up': if (moveItem(b.items, i, -1)) done(); return;
     case 'item-down': if (moveItem(b.items, i, 1)) done(); return;
