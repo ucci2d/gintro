@@ -90,3 +90,9 @@
 - **Modelli personali**: «Salva come modello» dall'editor (nome a scelta); compaiono in Nuova scheda accanto ai 4 predefiniti, con rinomina (✎) ed elimina (🗑). Salvati in `settings` (id `templates`): solo sul dispositivo, inclusi nel backup, nessuna migrazione.
 - **Settimana n / durata** (facoltativa) nell'intestazione scheda; compare nel documento (A4), nel testo WhatsApp e nella vista cliente (payload `wk`, compatibile). Duplicando, la settimana avanza di 1 (a fine ciclo riparte da 1).
 - `sw.js` v14.
+
+## RAK-16 — v1.5-C: video più comodi + QR nel PDF (2026-11-17)
+- **Miniature e anteprima video**: in Libreria ogni esercizio con video mostra la miniatura (`i.ytimg.com/vi/<id>/mqdefault.jpg`, lazy) con ▶; un tocco apre il video in **modale** (`youtube-nocookie`) senza uscire dall'app. Stesso nel bottom sheet (ricerca esercizio con miniatura + ▶, e «Guarda il video scelto» nel form) e nel dettaglio esercizio. `playVideo()` in `js/video.js`.
+- **Validazione link**: `youtu.be`, `watch?v=`, `shorts/`, `embed/`, `live/`, m./music.; un link YouTube senza id valido (canale, playlist, id troncato) viene rifiutato con messaggio chiaro, anche al salvataggio in libreria.
+- **QR nel documento**: nuovo `js/qr.js` (generatore QR proprio, byte mode, correzione L, versioni 1–40, nessuna libreria). Impostazioni → «QR code dei video nella stampa» (spenta di default) aggiunge un QR da 15 mm accanto a ogni esercizio con video. In testa al documento un **QR grande al link cliente** (v1.5-A), omesso se il link non entra in un QR. Presente in anteprima, PDF e A4.
+- `sw.js` v15.

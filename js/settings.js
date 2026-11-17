@@ -41,6 +41,7 @@ export async function renderSettings(view, title, sub) {
           <input type="color" class="set-color" id="set-color" value="${/^#[0-9a-f]{6}$/i.test(s.accent) ? s.accent : DEFAULT_ACCENT}" aria-label="Colore personalizzato"></div></div>
       <label>Nota a piè di pagina<textarea class="inp" data-f="footerNote" rows="2" placeholder="es. Per dubbi scrivimi su WhatsApp">${esc(s.footerNote)}</textarea></label>
       <label class="set-chk"><input type="checkbox" id="set-load" ${s.showLoadColumn !== false ? 'checked' : ''}>Mostra la colonna «Carico» da compilare a mano</label>
+      <label class="set-chk"><input type="checkbox" id="set-qr" ${s.qrVideos ? 'checked' : ''}>QR code dei video nella stampa (un piccolo QR accanto a ogni esercizio, per chi stampa su carta)</label>
     </section>
     <section class="set-card"><h2>Installa Rakan sul telefono</h2>
       <p class="set-help"><strong>iPhone</strong> (Safari): tocca Condividi → «Aggiungi alla schermata Home».</p>
@@ -58,6 +59,7 @@ export async function renderSettings(view, title, sub) {
     view.querySelectorAll('.sw').forEach(b => b.onclick = async () => { await save({ accent: b.dataset.c }); draw(); });
     document.getElementById('set-color').onchange = async e => { await save({ accent: e.target.value }); draw(); };
     document.getElementById('set-load').onchange = e => save({ showLoadColumn: e.target.checked });
+    document.getElementById('set-qr').onchange = e => save({ qrVideos: e.target.checked });
     document.getElementById('set-logo').onchange = async e => {
       const f = e.target.files[0]; if (!f) return;
       try { await save({ logoDataUrl: await resizeImage(f) }); draw(); } catch (err) { document.getElementById('bk-msg').textContent = 'Errore: ' + err.message; }

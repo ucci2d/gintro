@@ -89,3 +89,15 @@ DEAD BUG 3x10
 | Settimana: campo editor, documento, WhatsApp, vista cliente (link reale) | ✅ |
 | 390 e 1400px: nessun overflow orizzontale (editor, dialog, vista cliente) | ✅ |
 | Console senza errori | ✅ |
+
+## RAK-16 — v1.5-C (Chrome headless 390 / 1400)
+| Verifica | Esito |
+|---|---|
+| Libreria: miniature lazy + ▶ su ogni riga con video; modale youtube-nocookie apre e si chiude (iframe rimosso) | ✅ |
+| Dettaglio esercizio: miniatura + «Guarda» apre la modale | ✅ |
+| Link: shorts/, m.youtube, watch&t= → id; `watch?v=abc` rifiutato; non-YouTube accettato | ✅ |
+| QR decodificati con jsQR (test in /tmp, non nel repo): 18/18, da v1 a v40, anche UTF-8 e multi-blocco | ✅ |
+| Documento: QR grande in testa; QR piccoli per esercizio solo con l'opzione; esercizi senza video senza QR | ✅ |
+| Impostazioni: opzione salvata | ✅ |
+| 390 e 1400px: nessun overflow orizzontale; console senza errori | ✅ |
+| Non verificato: scansione fisica da carta stampata; riproduzione video su Safari iOS reale | — |
