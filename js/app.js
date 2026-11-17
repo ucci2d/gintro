@@ -3,6 +3,7 @@ import { renderLibrary } from './library.js';
 import { renderEditor } from './editor.js';
 import { renderSettings } from './settings.js';
 import { renderHome, renderClients } from './plans.js';
+import { isClientHash, renderClient } from './client.js';
 // Shell dell'app: navigazione, routing con hash e registrazione del service worker.
 const ICONS = {
   schede: '<path d="M7 3h8l4 4v14H7z"/><path d="M15 3v4h4M10 12h6M10 16h6"/>',
@@ -42,6 +43,8 @@ function esc(s) {
 }
 
 function render() {
+  if (isClientHash()) { nav.hidden = true; return renderClient(view); }
+  document.body.classList.remove('client-mode'); nav.hidden = false;
   const r = parseRoute();
   let title, sub, emptyT, emptyD;
   if (r.name === 'scheda') {
@@ -67,7 +70,7 @@ function setNav(r, title) {
 }
 
 window.addEventListener('hashchange', render);
-store.init();
+if (!isClientHash()) store.init();
 render();
 
 if ('serviceWorker' in navigator) {
