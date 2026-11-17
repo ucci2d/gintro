@@ -1,6 +1,9 @@
 // Bottom sheet (mobile) / pannello (desktop) per aggiungere e modificare un esercizio: ricerca libreria, prescrizione a chip, lastRx.
 import * as store from './store.js';
 import { CATEGORIES, suggestCategory } from './library.js';
+import { videoField, thumbOf } from './video.js';
+import { learn } from './learn.js';
+import { toast } from './ui.js';
 
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
@@ -30,7 +33,7 @@ export function rank(exercises, query, usage = {}, cat = '', limit = 30) {
     .slice(0, limit);
 }
 // Prescrizione iniziale: lastRx se c'è, altrimenti vuota.
-export const prefill = rx => Object.fromEntries([...RX_FIELDS, 'note'].map(k => [k, rx?.[k] ?? '']));
+export const prefill = (rx, ex) => { const o = Object.fromEntries([...RX_FIELDS, 'note'].map(k => [k, rx?.[k] ?? ''])); if (!o.note && ex?.note) o.note = ex.note; return o; };
 
 // ---- Sheet ----
 // opts: { item (null = nuovo), onSave(item, {again}) }. Ritorna una Promise risolta alla chiusura.
@@ -39,6 +42,8 @@ export async function openSheet({ item = null, plan = null, onSave }) {
   const usage = usageCounts(plan ? [...plans.filter(p => p.id !== plan.id), plan] : plans);
   const isEdit = !!item;
   let it = item ? { ...item } : null;   // esercizio scelto (null = fase ricerca)
+  if (it) it._vids = exercises.find(e => e.id === it.exId)?.v || [];
+  let orig = it ? { name: it.name, video: it.video, note: it.note } : null;   // valori all'apertura (per «Aggiorna in libreria?»)
   let cat = '', q = '', added = 0;
 
   const dlg = document.createElement('dialog');
@@ -73,8 +78,9 @@ export async function openSheet({ item = null, plan = null, onSave }) {
   }
 
   async function pick(ex) {
-    const rx = prefill(await store.get('lastRx', ex.id));
+    const rx = prefill(await store.get('lastRx', ex.id), ex);
     it = { id: store.uuid(), linked: false, load: '', ...rx, exId: ex.id, name: ex.n, video: ex.v?.[0] || '', _vids: ex.v || [] };
+    orig = { name: it.name, video: it.video, note: it.note };
     drawForm();
   }
   // Creazione facile (come in libreria): nome in maiuscolo, categoria proposta, custom:true.
@@ -88,22 +94,29 @@ export async function openSheet({ item = null, plan = null, onSave }) {
 
   function drawForm() {
     dlg.classList.remove('sh-tall');
-    const vids = [...new Set([...(it._vids || []), it.video].filter(Boolean))];
     dlg.innerHTML = `<form class="sh-body" method="dialog"><div class="sh-head"><strong class="sh-name">${esc(it.name)}</strong>
         ${isEdit ? '' : '<button type="button" class="btn" data-a="back">Cambia</button>'}<button type="button" class="btn-x" data-a="close" aria-label="Chiudi">✕</button></div>
+      <label class="sh-note">Nome<input class="inp" name="name" value="${esc(it.name)}" autocomplete="off"></label>
       ${['sets', 'reps'].map(k => chipRow(k, CHIPS[k])).join('')}
       ${chipRow('side', CHIPS.side)}
       ${chipRow('rest', CHIPS.rest)}
       <div class="sh-row"><span class="sh-lab">${LABELS.load}</span><input class="inp sh-in sh-wide" name="load" value="${esc(it.load)}" placeholder="es. 20 kg" autocomplete="off" aria-label="Carico"></div>
       ${chipRow('tech', CHIPS.tech)}
-      ${vids.length > 1 ? `<div class="sh-row"><span class="sh-lab">Video</span><div class="sh-chips">${vids.map((v, i) => `<button type="button" class="chip" data-vid="${esc(v)}" aria-pressed="${it.video === v}">Video ${i + 1}</button>`).join('')}</div></div>` : ''}
+      <div class="sh-row"><span class="sh-lab">Video (quello scelto va al cliente)</span><div class="sh-vids"></div><div class="sh-vf"></div></div>
       <label class="sh-note">Nota tecnica<textarea class="inp" name="note" rows="2" placeholder="es. spalle basse, controlla le ginocchia">${esc(it.note)}</textarea></label>
       <div class="sh-actions">${isEdit ? '<button type="button" class="btn" data-a="close">Annulla</button><button type="button" class="btn btn-accent" data-a="save">Salva</button>'
         : '<button type="button" class="btn" data-a="again">Aggiungi e continua</button><button type="button" class="btn btn-accent" data-a="save">Aggiungi</button>'}</div></form>`;
     dlg.onclick = null;
     const f = dlg.querySelector('form');
+    if (it.exId) { try { localStorage.setItem('rakan:editing', JSON.stringify({ exId: it.exId, name: it.name, t: Date.now() })); } catch {} }
+    const drawVids = () => {
+      const vids = [...new Set([...(it._vids || []), it.video].filter(Boolean))];
+      f.querySelector('.sh-vids').innerHTML = vids.length ? vids.map((v, i) => { const th = thumbOf(v); return `<button type="button" class="sh-vid" data-vid="${esc(v)}" aria-pressed="${it.video === v}" aria-label="Video ${i + 1}">${th ? `<img src="${esc(th)}" alt="" width="96" height="54" loading="lazy" onerror="this.remove()">` : ''}<small>Video ${i + 1}</small></button>`; }).join('') : '<p class="sh-sub">Nessun video: incolla un link qui sotto.</p>';
+    };
+    const vf = videoField({ getName: () => it.name, onChange: u => { if (!u) return; it._vids = [...new Set([...(it._vids || []), u])]; it.video = u; vf.clear(); drawVids(); } });
+    f.querySelector('.sh-vf').append(vf); drawVids();
     const sync = k => dlg.querySelectorAll(`[data-k="${k}"]`).forEach(b => b.setAttribute('aria-pressed', String(b.dataset.v === it[k])));
-    f.oninput = e => { const n = e.target.name; if (!n) return; it[n] = e.target.value; if (CHIPS[n]) sync(n); };
+    f.oninput = e => { const n = e.target.name; if (!n || n === 'url') return; it[n] = e.target.value; if (CHIPS[n]) sync(n); if (n === 'name') f.querySelector('.sh-name').textContent = it.name; };
     f.onclick = e => {
       const t = e.target.closest('button'); if (!t) return;
       if (t.dataset.k) { const k = t.dataset.k; it[k] = it[k] === t.dataset.v ? '' : t.dataset.v; f[k].value = it[k]; return sync(k); }
@@ -115,8 +128,11 @@ export async function openSheet({ item = null, plan = null, onSave }) {
   }
 
   async function commit(again) {
-    const out = { ...it }; delete out._vids;
+    const out = { ...it }; delete out._vids; delete out.url;
     for (const k of [...RX_FIELDS, 'load']) out[k] = String(out[k] ?? '').trim();
+    out.name = String(out.name || '').replace(/\s+/g, ' ').trim().toUpperCase();
+    if (!out.name) return dlg.querySelector('[name="name"]')?.focus();
+    if (out.exId && orig) { const ex = exercises.find(e => e.id === out.exId); const saved = await learn(orig, out, ex, exercises); if (saved) toast('Libreria aggiornata'); }
     if (out.exId) await store.put('lastRx', { id: out.exId, ...Object.fromEntries([...RX_FIELDS, 'note'].map(k => [k, out[k]])) });
     onSave(out, { again });
     if (again) { added++; it = null; q = ''; drawSearch(); dlg.querySelector('#sh-q')?.focus(); } else dlg.close();
@@ -124,7 +140,7 @@ export async function openSheet({ item = null, plan = null, onSave }) {
 
   dlg.addEventListener('click', e => { if (e.target === dlg) dlg.close(); });   // tocco sullo sfondo
   return new Promise(res => {
-    dlg.addEventListener('close', () => { dlg.remove(); res(); });
+    dlg.addEventListener('close', () => { try { localStorage.removeItem('rakan:editing'); } catch {} dlg.remove(); res(); });
     if (it) drawForm(); else drawSearch();
     dlg.showModal();
     if (!it) dlg.querySelector('#sh-q')?.focus();
