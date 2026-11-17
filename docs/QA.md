@@ -77,3 +77,15 @@ DEAD BUG 3x10
 | Share Target: `takeShared` + dialog «Video ricevuto» (esercizio in modifica / suggeriti / nuovo) | ✅ logica e UI; l'invio reale da YouTube su Android installato non verificabile da qui |
 | «Incolla» da appunti reali | ⚠️ non provabile in headless (permesso clipboard); c'è il ripiego sul campo |
 | Console senza errori | ✅ |
+
+## RAK-15 — Progressioni, modelli personali, settimane (Chrome headless via CDP, 390 e 1400px)
+| Controllo | Esito |
+|---|---|
+| Progressione +1 serie/+2 rip/+2,5 kg/rec −15": `20 kg→22,5 kg`, `1'30"→1'15"`, `3×12→4×14`; `10+12+15`, «peso corporeo», `40"` invariati | ✅ |
+| +5% carico (`40→42`, `2→2,5`), recupero minimo 15", settimana `2/4→3/4`, `4/4→1` | ✅ |
+| Perimetro «solo un blocco» (2 modifiche invece di 5); «Nessuna» = copia identica; ‹ Indietro | ✅ |
+| Duplicato creato con progressione e aperto; originale intatto | ✅ |
+| Salva come modello → compare in Nuova scheda → rinomina → usa → elimina | ✅ |
+| Settimana: campo editor, documento, WhatsApp, vista cliente (link reale) | ✅ |
+| 390 e 1400px: nessun overflow orizzontale (editor, dialog, vista cliente) | ✅ |
+| Console senza errori | ✅ |
