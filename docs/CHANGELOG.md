@@ -96,3 +96,10 @@
 - **Validazione link**: `youtu.be`, `watch?v=`, `shorts/`, `embed/`, `live/`, m./music.; un link YouTube senza id valido (canale, playlist, id troncato) viene rifiutato con messaggio chiaro, anche al salvataggio in libreria.
 - **QR nel documento**: nuovo `js/qr.js` (generatore QR proprio, byte mode, correzione L, versioni 1–40, nessuna libreria). Impostazioni → «QR code dei video nella stampa» (spenta di default) aggiunge un QR da 15 mm accanto a ogni esercizio con video. In testa al documento un **QR grande al link cliente** (v1.5-A), omesso se il link non entra in un QR. Presente in anteprima, PDF e A4.
 - `sw.js` v15.
+
+## RAK-17 — v1.5-D: backup facile tra PC e telefono (2026-11-17)
+- Nuovo `js/backup.js`. **Esporta backup**: file `.json` condiviso con la Web Share API (su iPhone/Android: iCloud Drive, Google Drive, WhatsApp a sé stessi); senza supporto, download. Annullare la condivisione non conta come backup.
+- **Importa backup = unione intelligente** (`store.mergeBackup`): per id, vince la versione con `updatedAt` più recente (a pari data resta la locale); nulla viene cancellato. Riepilogo: «Aggiunti: 2 schede, 1 iscritto · Aggiornati: 1 scheda». Ora `updatedAt` è impostato a ogni salvataggio di iscritti, schede, esercizi, impostazioni, lastRx. Le eliminazioni non si propagano (scelta voluta: nessuna perdita).
+- **Promemoria in Home** se l'ultimo backup ha più di 7 giorni (o mai fatto, dal primo uso), con pulsante verso Impostazioni. Data in `meta.lastBackup` (locale, non esportata).
+- **Statistiche in Home**: iscritti, schede del mese, top 5 esercizi più usati.
+- `sw.js` v16.
