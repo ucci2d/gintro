@@ -2,6 +2,7 @@
 import * as store from './store.js';
 import { newItem, newBlock, fmtDate } from './editor.js';
 import { toast } from './ui.js';
+import { reminderHtml, computeStats, statsHtml } from './backup.js';
 import { progressStep, applyProgression, nextWeek, hasRules } from './progress.js';
 
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -207,9 +208,11 @@ export async function renderHome(view) {
     const rows = many ? (nq ? sorted.filter(p => store.normalize(`${p.title} ${names[p.clientId] || ''}`).includes(nq)) : sorted.slice(0, 10)) : sorted;
     return rows.length ? `<div class="pl-list">${rows.map(p => planCard(p, names[p.clientId])).join('')}</div>` : '<div class="empty"><strong>Nessun risultato</strong>Prova con un altro nome.</div>';
   };
-  view.innerHTML = `<h1 class="view-title">Schede</h1><p class="view-sub">Le tue schede di allenamento</p>
+  const remind = await reminderHtml();
+  view.innerHTML = `<h1 class="view-title">Schede</h1><p class="view-sub">Le tue schede di allenamento</p>${remind}
     <button class="btn btn-accent home-new" data-act="new-plan">+ Nuova scheda</button>
     <div class="home-row"><button class="btn" data-act="new-client">+ Nuovo iscritto</button><a class="btn" href="#iscritti">Iscritti</a></div>
+    ${clients.length || sorted.length ? statsHtml(computeStats(plans, clients)) : ''}
     <h2 class="sec-title">Schede recenti</h2>
     ${many ? '<input class="inp home-q" id="home-q" type="search" placeholder="Cerca scheda o iscritto" autocomplete="off" aria-label="Cerca scheda o iscritto">' : ''}
     <div id="home-list">${sorted.length ? listHtml() : `<div class="empty"><strong>Nessuna scheda ancora</strong>${clients.length ? 'Scegli un iscritto e parti dall\'ultima scheda o da un modello.' : 'Aggiungi il primo iscritto, poi crea la sua scheda.'}<br><button class="btn btn-accent" style="margin-top:14px" data-act="${clients.length ? 'new-plan' : 'new-client'}">${clients.length ? '+ Nuova scheda' : '+ Nuovo iscritto'}</button></div>`}</div>`;
