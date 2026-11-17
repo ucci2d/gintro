@@ -59,7 +59,7 @@ export async function renderClient(view) {
   document.title = `${p.t || 'Scheda'} · ${p.tr || 'Rakan'}`;
   const st = load(key);
   st.chk ||= {}; st.load ||= {}; st.done ||= {};
-  const info = [['Obiettivo', p.g], ['Frequenza', p.f]].filter(x => x[1]);
+  const info = [['Obiettivo', p.g], ['Frequenza', p.f], ['Settimana', p.wk && p.wk.replace(/^Settimana /, '')]].filter(x => x[1]);
   const text = (t, v) => v ? `<section class="cl-text"><h3>${t}</h3><p>${nl(v)}</p></section>` : '';
   view.innerHTML = `<div class="cl-wrap" style="--cl-accent:${safeColor(p.a)}">
     <header class="cl-head">${p.tr || p.st ? `<div class="cl-who">${p.tr ? `<strong>${esc(p.tr)}</strong>` : ''}${p.st ? `<span>${esc(p.st)}</span>` : ''}</div>` : ''}

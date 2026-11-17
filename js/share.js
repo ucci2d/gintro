@@ -1,6 +1,6 @@
 // Link cliente senza server: la scheda (solo campi per il cliente) è compressa e messa nel frammento # dell'URL.
 import * as store from './store.js';
-import { rxSummary } from './editor.js';
+import { rxSummary, weekLabel } from './editor.js';
 import { toast } from './ui.js';
 
 export const BASE_URL = 'https://ucci2d.github.io/gintro/';
@@ -23,7 +23,7 @@ export function ytId(u) {
 export function buildPayload(plan, client, s) {
   const o = { v: 1, t: plan.title || ('Programmazione ' + (client?.name || '')).trim(), d: plan.date || '' };
   const put = (k, v) => { if (v) o[k] = v; };
-  put('g', plan.goal); put('f', plan.frequency); put('w', plan.warmup); put('k', plan.cooldown); put('n', plan.finalNote);
+  put('g', plan.goal); put('f', plan.frequency); put('wk', weekLabel(plan)); put('w', plan.warmup); put('k', plan.cooldown); put('n', plan.finalNote);
   put('tr', s.trainerName); put('st', s.studio); put('a', s.accent);
   o.D = (plan.days || []).map(d => ({
     n: d.name,
