@@ -101,3 +101,13 @@ DEAD BUG 3x10
 | Impostazioni: opzione salvata | ✅ |
 | 390 e 1400px: nessun overflow orizzontale; console senza errori | ✅ |
 | Non verificato: scansione fisica da carta stampata; riproduzione video su Safari iOS reale | — |
+
+## RAK-17 — v1.5-D (Chrome headless CDP, 390 / 1400)
+| Verifica | Esito |
+|---|---|
+| Merge: nuovo iscritto/scheda/esercizio aggiunti; scheda più recente aggiorna; versione più vecchia ignorata; secondo import «Nessuna novità» | ✅ |
+| Promemoria: assente se recente, compare dopo 10 giorni; sparisce dopo l'export | ✅ |
+| Export senza Web Share → download, `lastBackup` salvato | ✅ |
+| Statistiche in Home (iscritti, schede del mese, top esercizi) | ✅ |
+| 390 e 1400px: nessun overflow (Home, Impostazioni); console senza errori | ✅ |
+| Non verificato: share sheet reale su iPhone/Android (non testabile in headless) | — |
