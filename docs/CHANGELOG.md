@@ -84,3 +84,9 @@
 
 ## Bug trovati e corretti (RAK-18)
 - Il campo video generico non deve finire nei dati della riga (`url` escluso dal salvataggio).
+
+## RAK-15 — v1.5-B: progressioni, modelli personali, settimane (2026-11-17)
+- Nuovo `js/progress.js`. **«Duplica con progressione»**: da Nuova scheda → «Ultima scheda» (e dall'editor con «Duplica con progressione») si scelgono regole a chip — +1 serie, +2 ripetizioni, +2,5 kg o +5% carico (solo se il carico è numerico, arrotondato a 0,5), recupero −15" (minimo 15"; anche recupero a fine giro dei circuiti) — o «Nessuna», applicabili a tutta la scheda o a un solo blocco. Anteprima prima/dopo riga per riga; valori non numerici o a tempo (`10+12+15`, `40"`, MAX, «peso corporeo») restano com'è.
+- **Modelli personali**: «Salva come modello» dall'editor (nome a scelta); compaiono in Nuova scheda accanto ai 4 predefiniti, con rinomina (✎) ed elimina (🗑). Salvati in `settings` (id `templates`): solo sul dispositivo, inclusi nel backup, nessuna migrazione.
+- **Settimana n / durata** (facoltativa) nell'intestazione scheda; compare nel documento (A4), nel testo WhatsApp e nella vista cliente (payload `wk`, compatibile). Duplicando, la settimana avanza di 1 (a fine ciclo riparte da 1).
+- `sw.js` v14.
