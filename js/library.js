@@ -1,5 +1,6 @@
 // Libreria esercizi: ricerca istantanea, filtri categoria, lista paginata, scheda esercizio, nuovo esercizio, import multiplo.
 import * as store from './store.js';
+import { toast } from './ui.js';
 
 export const CATEGORIES = ['Gambe e glutei', 'Core', 'Schiena', 'Petto', 'Spalle', 'Braccia', 'Total body', 'Cardio e metabolico', 'Mobilità', 'Respirazione'];
 const PAGE = 40;
@@ -157,10 +158,10 @@ export async function renderLibrary(view) {
       const rec = isNew ? { id: 'c-' + store.uuid(), custom: true } : { ...ex };
       delete rec._s;
       await store.put('exercises', { ...rec, n: name, c: sel.value, v: videos });
-      close(); reload();
+      close(); reload(); toast('Salvato');
     };
     const del = dlg.querySelector('#ex-del');
-    if (del) del.onclick = async () => { if (confirm('Eliminare questo esercizio? Le schede già create non cambiano.')) { await store.remove('exercises', ex.id); close(); reload(); } };
+    if (del) del.onclick = async () => { if (confirm('Eliminare questo esercizio? Le schede già create non cambiano.')) { await store.remove('exercises', ex.id); close(); reload(); toast('Eliminato'); } };
     f.n.focus();
   }
 
@@ -198,9 +199,10 @@ export async function renderLibrary(view) {
     dlg.querySelector('#imp-go').onclick = analyse;
     prev.onchange = e => { const s = e.target.closest('select'); if (s) rows[+s.dataset.i].c = s.value; };
     ok.onclick = async () => {
-      for (const r of rows.filter(r => !r.error))
+      const okRows = rows.filter(r => !r.error);
+      for (const r of okRows)
         await store.put('exercises', { id: 'c-' + store.uuid(), n: r.name, c: r.c, v: r.video ? [r.video] : [], custom: true });
-      close(); reload();
+      close(); reload(); toast(`Importati ${okRows.length} esercizi`);
     };
   }
 

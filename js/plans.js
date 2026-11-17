@@ -1,6 +1,7 @@
 // Home, elenco iscritti e flusso "Nuova scheda" (iscritto → parti da: ultima scheda / modello / vuota).
 import * as store from './store.js';
 import { newItem, newBlock, fmtDate } from './editor.js';
+import { toast } from './ui.js';
 
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const today = () => new Date().toISOString().slice(0, 10);
@@ -85,7 +86,7 @@ export function newClientDialog(onDone, name = '') {
   f.onsubmit = async e => {
     e.preventDefault(); const n = f.name.value.trim(); if (!n) return;
     const c = await store.put('clients', { name: n, goal: f.goal.value.trim(), info: '' });
-    d.close(); onDone?.(c);
+    d.close(); toast('Iscritto aggiunto'); onDone?.(c);
   };
 }
 
@@ -139,12 +140,22 @@ const planCard = (p, name) => `<a class="pl-card" href="#scheda-${p.id}"><strong
 export async function renderHome(view) {
   const [plans, clients] = await Promise.all([store.list('plans'), store.list('clients')]);
   const names = Object.fromEntries(clients.map(c => [c.id, c.name]));
-  const recent = plans.sort((a, b) => (b.updatedAt || '').localeCompare(a.updatedAt || '')).slice(0, 8);
+  const sorted = plans.sort((a, b) => (b.updatedAt || '').localeCompare(a.updatedAt || ''));
+  const many = sorted.length > 10;
+  let q = '';
+  const listHtml = () => {
+    const nq = store.normalize(q);
+    const rows = many ? (nq ? sorted.filter(p => store.normalize(`${p.title} ${names[p.clientId] || ''}`).includes(nq)) : sorted.slice(0, 10)) : sorted;
+    return rows.length ? `<div class="pl-list">${rows.map(p => planCard(p, names[p.clientId])).join('')}</div>` : '<div class="empty"><strong>Nessun risultato</strong>Prova con un altro nome.</div>';
+  };
   view.innerHTML = `<h1 class="view-title">Schede</h1><p class="view-sub">Le tue schede di allenamento</p>
     <button class="btn btn-accent home-new" data-act="new-plan">+ Nuova scheda</button>
     <div class="home-row"><button class="btn" data-act="new-client">+ Nuovo iscritto</button><a class="btn" href="#iscritti">Iscritti</a></div>
     <h2 class="sec-title">Schede recenti</h2>
-    ${recent.length ? `<div class="pl-list">${recent.map(p => planCard(p, names[p.clientId])).join('')}</div>` : '<div class="empty"><strong>Nessuna scheda ancora</strong>Tocca «Nuova scheda» per iniziare.</div>'}`;
+    ${many ? '<input class="inp home-q" id="home-q" type="search" placeholder="Cerca scheda o iscritto" autocomplete="off" aria-label="Cerca scheda o iscritto">' : ''}
+    <div id="home-list">${sorted.length ? listHtml() : `<div class="empty"><strong>Nessuna scheda ancora</strong>${clients.length ? 'Scegli un iscritto e parti dall\'ultima scheda o da un modello.' : 'Aggiungi il primo iscritto, poi crea la sua scheda.'}<br><button class="btn btn-accent" style="margin-top:14px" data-act="${clients.length ? 'new-plan' : 'new-client'}">${clients.length ? '+ Nuova scheda' : '+ Nuovo iscritto'}</button></div>`}</div>`;
+  const inp = view.querySelector('#home-q');
+  if (inp) inp.oninput = () => { q = inp.value; view.querySelector('#home-list').innerHTML = listHtml(); };
   view.onclick = e => {
     const a = e.target.closest('[data-act]'); if (!a) return;
     if (a.dataset.act === 'new-plan') newPlanDialog();
@@ -166,7 +177,7 @@ export async function renderClients(view) {
           <div class="cl-body">${c.goal ? `<p class="view-sub">${esc(c.goal)}</p>` : ''}
           <div class="pl-list">${mine.map(p => planCard(p)).join('') || '<p class="view-sub">Nessuna scheda.</p>'}</div>
           <button class="btn btn-accent" data-act="new-plan" data-c="${c.id}">+ Nuova scheda per ${esc(c.name)}</button></div></details>`;
-      }).join('') : `<div class="empty"><strong>${q ? 'Nessun risultato' : 'Nessun iscritto ancora'}</strong>${q ? '' : 'Aggiungi il primo con «+ Nuovo iscritto».'}</div>`}`;
+      }).join('') : `<div class="empty"><strong>${q ? 'Nessun risultato' : 'Nessun iscritto ancora'}</strong>${q ? '' : 'Aggiungi il primo iscritto: poi potrai creargli la scheda.<br><button class="btn btn-accent" style="margin-top:14px" data-act="new-client">+ Nuovo iscritto</button>'}</div>`}`;
     const inp = view.querySelector('#cl-q');
     inp.oninput = () => { q = inp.value; draw(); };
     if (keep) { inp.focus(); inp.setSelectionRange(q.length, q.length); }
