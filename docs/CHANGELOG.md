@@ -48,3 +48,9 @@
 ## RAK-10 — Git + primo push (2026-11-16)
 - `git init` (branch main), `.gitignore` (.DS_Store, *.tgz, *.pdf, log/tmp, icons/*.png), `README.md` breve, remote `origin` = https://github.com/ucci2d/gintro. Controllo pre-commit: solo file di `app/`, nessun PDF, nessun dato paziente (solo «Cliente demo»). `credential.helper` vuoto: nessun Portachiavi.
 - `git push` non ha credenziali: il push è fatto con `push_files` della connessione GitHub di Paperclip (MCP), in più commit consecutivi «Primo commit … (parte n/7)». I PNG delle icone non sono nel repo: li genera `.github/workflows/pages.yml` dagli SVG (192, 512, maskable 512, apple-touch 180) e pubblica su GitHub Pages (https://ucci2d.github.io/gintro/). Se il workflow fallisce con errore Pages: Settings → Pages → Source = «GitHub Actions».
+
+## RAK-11 — Fase 2a: impostazioni trainer + fix mobile (2026-11-17)
+- Nuovo `js/settings.js` (Impostazioni): nome trainer (default vuoto, niente più «PERSONAL TRAINER» fisso), studio/sottotitolo, logo (upload → dataURL max 600px), colore accento (6 swatch + input colore, default #0F766E), nota a piè di pagina, colonna «Carico» on/off; salvataggio automatico. Documento e testo WhatsApp (firma «— nome · studio» + nota piè) li usano. Backup invariato.
+- Fix anteprima ≤640px: il documento si adatta (pill sotto il nome, casella Carico sotto la prescrizione, intestazione a capo), solo `@media screen`: stampa A4 invariata.
+- Bottom sheet esercizio: ricerca a ~85dvh con lista risultati scrollabile; «Crea «testo»» è secondario se ci sono risultati, primario (lime) solo senza risultati. `sw.js` v9.
+- Verificato in Chrome headless (≈500px di larghezza minima e 1400×900): nessun errore in console, nessun overflow, impostazioni salvate e riflesse in documento e WhatsApp. Nota: Chrome headless va lanciato con `--use-mock-keychain --password-store=basic` (evita il Portachiavi).
