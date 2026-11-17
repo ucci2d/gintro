@@ -1,7 +1,7 @@
 // Service worker: cache offline dei file statici (cache-first, aggiornamento in background).
-const CACHE = 'rakan-v15';
+const CACHE = 'rakan-v16';
 const ASSETS = [
-  './', 'index.html', 'manifest.webmanifest', 'css/app.css', 'css/doc.css', 'css/client.css', 'css/quick.css', 'js/app.js', 'js/ui.js', 'js/store.js', 'js/library.js', 'js/editor.js', 'js/sheet.js', 'js/doc.js', 'js/plans.js', 'js/settings.js', 'js/install.js', 'js/share.js', 'js/client.js', 'js/parse.js', 'js/video.js', 'js/quick.js', 'js/learn.js', 'js/shared.js', 'js/progress.js', 'js/qr.js', 'data/exercises.json',
+  './', 'index.html', 'manifest.webmanifest', 'css/app.css', 'css/doc.css', 'css/client.css', 'css/quick.css', 'js/app.js', 'js/ui.js', 'js/store.js', 'js/library.js', 'js/editor.js', 'js/sheet.js', 'js/doc.js', 'js/plans.js', 'js/settings.js', 'js/install.js', 'js/share.js', 'js/client.js', 'js/parse.js', 'js/video.js', 'js/quick.js', 'js/learn.js', 'js/shared.js', 'js/progress.js', 'js/qr.js', 'js/backup.js', 'data/exercises.json',
   'icons/icon.svg', 'icons/icon-192.png', 'icons/icon-512.png', 'icons/icon-maskable-512.png', 'icons/apple-touch-icon.png',
 ];
 

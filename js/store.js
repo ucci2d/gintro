@@ -79,8 +79,8 @@ export async function put(coll, rec) {
 async function putRaw(coll, rec) {
   check(coll);
   if (!rec.id) rec = { ...rec, id: uuid() };
+  if (coll !== 'meta') rec = { ...rec, updatedAt: new Date().toISOString() };
   if (coll === 'clients' && !rec.createdAt) rec = { ...rec, createdAt: new Date().toISOString() };
-  if (coll === 'plans') rec = { ...rec, updatedAt: new Date().toISOString() };
   rec = indexed(coll, structuredClone(rec));
   cache[coll].set(rec.id, rec);
   await backend.save(coll, rec);
@@ -168,4 +168,33 @@ export async function importBackup(text) {
   await put('meta', { id: 'seeded', at: new Date().toISOString() });
   await put('meta', { id: 'demo', at: new Date().toISOString() });
   if (b.schemaVersion < SCHEMA_VERSION) await migrate(b.schemaVersion);
+}
+
+// Meta locali (non esportati): es. data dell'ultimo backup.
+export async function getMeta(id) { await init(); return structuredClone(cache.meta.get(id)); }
+export async function setMeta(id, patch) { await init(); return putRaw('meta', { ...cache.meta.get(id), ...patch, id }); }
+
+const stamp = r => r?.updatedAt || r?.createdAt || '';
+
+// Unione intelligente: per id, vince la versione con updatedAt più recente (a pari data resta la locale).
+// Non cancella mai nulla. Restituisce, per collezione, quanti record sono stati aggiunti/aggiornati.
+export async function mergeBackup(text) {
+  await init();
+  let b; try { b = JSON.parse(text); } catch { throw new Error('File non valido'); }
+  if (b?.app !== 'rakan' || !b.data) throw new Error('Non è un backup di Rakan');
+  if (b.schemaVersion > SCHEMA_VERSION) throw new Error('Backup creato con una versione più recente');
+  const res = {};
+  for (const c of COLLECTIONS) {
+    res[c] = { added: 0, updated: 0 };
+    if (!Array.isArray(b.data[c])) continue;
+    for (const r of b.data[c]) {
+      if (!r || !r.id) continue;
+      const mine = cache[c].get(r.id);
+      if (mine && !(stamp(r) > stamp(mine))) continue;
+      const x = indexed(c, r);
+      cache[c].set(x.id, x); await backend.save(c, x);
+      res[c][mine ? 'updated' : 'added']++;
+    }
+  }
+  return res;
 }
