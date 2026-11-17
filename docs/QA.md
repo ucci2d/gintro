@@ -53,3 +53,27 @@ Metodo: Chrome headless 157 (`--use-mock-keychain --password-store=basic`), pilo
 | «Invia al cliente» nell'editor: dialog con link, nessun overflow | ✅ |
 | Avviso >6000 caratteri + PDF | ✅ codice (non provato con scheda enorme) |
 | Console senza errori | ✅ |
+
+## RAK-18 — Scrittura rapida + video facili (Chrome headless via CDP, 390 e 1400px)
+Test: scheda realistica di 2 giorni (forza + circuito + addome), 6 blocchi, 18 righe, **396 caratteri**, con 2 superserie (`PRESSA MONO 3x15 pg + STEP UP 3x10 pg`, `REMATORE 3x12 + FACE PULL 3x15`), 1 stripping (`HIP THRUST 4x10+12+15 stripping`), 2 circuiti con giri/recupero, `fermo`, `pg`, `pl`, `kg`, nota tra parentesi.
+Tempo: l'inserimento automatico (incolla + anteprima + conferma, 6 blocchi) = ~13 s; a mano, a 250 car/min (PC) ≈ **1'35"**, a 170 car/min (telefono) ≈ 2'20" (stima, non misurata su una persona). Più veloce incollando/duplicando i giorni.
+Righe usate (giorno 1 / giorno 2):
+```
+AFFONDI BULGARI 3x12 pg rec 1'30 | HIP THRUST 4x10+12+15 stripping | PRESSA MONO 3x15 pg + STEP UP 3x10 pg | LAT MACHINE 3x12 20kg (spalle basse)
+BURPEE 30" | RUSSIAN TWIST 20 | DEAD BUG 12 | ripetere 3 volte, rec 1'30" a fine giro
+PLANK 40" | SIDE PLANK 30" pl
+SQUAT 3x8 fermo 2" rec 2' | STACCO RUMENO 3x10 | REMATORE 3x12 + FACE PULL 3x15
+STEP UP BOX 12 pg | AFFONDI 10 pg | BIRD DOG 10 pl | ripetere 2 volte
+DEAD BUG 3x10
+```
+| Controllo | Esito |
+|---|---|
+| Parser: serie×rip, `10+12+15`, tempi, MAX, pg/pb/pl, kg, rec, tecniche, note, superserie, «ripetere N volte» | ✅ (verificato su 14 righe tipo) |
+| Abbinamento: «PRESSA MONO»→PRESSA MONOPODALICA, «BURPEE»→BURPEES (con video); «PLANK»/«SQUAT» ambigui → «Nuovo» con menu candidati, mai un video sbagliato in silenzio | ✅ |
+| Superserie A1/A2 (`linked`), circuito: giri e recupero impostati dalla riga «ripetere…» | ✅ |
+| Anteprima 390 e 1400px, nessun overflow orizzontale | ✅ |
+| Link: `youtu.be/…?si=`, `watch?v=…&t=`, `m.youtube.com/shorts/…`, link dentro a un testo → stesso `https://youtu.be/ID`; link non YouTube mantenuto | ✅ |
+| Sheet: link incollato → miniatura + video scelto; rinomina → «Aggiorna anche in libreria?» e video nuovo legato all'esercizio | ✅ |
+| Share Target: `takeShared` + dialog «Video ricevuto» (esercizio in modifica / suggeriti / nuovo) | ✅ logica e UI; l'invio reale da YouTube su Android installato non verificabile da qui |
+| «Incolla» da appunti reali | ⚠️ non provabile in headless (permesso clipboard); c'è il ripiego sul campo |
+| Console senza errori | ✅ |
