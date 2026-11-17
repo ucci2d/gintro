@@ -1,6 +1,7 @@
 // Libreria esercizi: ricerca istantanea, filtri categoria, lista paginata, scheda esercizio, nuovo esercizio, import multiplo.
 import * as store from './store.js';
 import { toast } from './ui.js';
+import { videoField, parseVideo, thumbOf } from './video.js';
 
 export const CATEGORIES = ['Gambe e glutei', 'Core', 'Schiena', 'Petto', 'Spalle', 'Braccia', 'Total body', 'Cardio e metabolico', 'Mobilità', 'Respirazione'];
 const PAGE = 40;
@@ -124,7 +125,7 @@ export async function renderLibrary(view) {
     open(`<form method="dialog" class="dlg-body" id="ex-form">
       <h2>${isNew ? 'Nuovo esercizio' : 'Esercizio'}</h2>
       <label>Nome<input name="n" class="inp" required autocomplete="off" value="${esc(ex?.n || preset.toUpperCase())}"></label>
-      <label>Link video${isNew ? ' (incolla)' : ''}<input name="url" class="inp" type="url" inputmode="url" placeholder="https://…" autocomplete="off"></label>
+      <div class="vf-host"><span class="lab">Aggiungi video</span></div>
       <ul id="vids" class="vids"></ul>
       <label>Categoria<select name="c" class="inp"></select></label>
       <p id="ex-msg" class="msg" role="status"></p>
@@ -134,20 +135,22 @@ export async function renderLibrary(view) {
         <button class="btn btn-accent" value="ok">Salva</button>
       </div></form>`);
     const f = dlg.querySelector('#ex-form'), sel = f.c, msg = dlg.querySelector('#ex-msg');
+    f.querySelector('.vf-host').append(videoField({ getName: () => f.n.value }));
     sel.innerHTML = cats().map(c => `<option>${esc(c)}</option>`).join('');
     sel.value = ex?.c || suggestCategory(f.n.value, all) || CATEGORIES[0];
     sel.onchange = () => catTouched = true;
     f.n.oninput = () => { if (!catTouched) { const s = suggestCategory(f.n.value, all); if (s) sel.value = s; } };
     const drawVids = () => dlg.querySelector('#vids').innerHTML = videos.map((u, i) =>
-      `<li><a href="${esc(u)}" target="_blank" rel="noopener">▶ ${esc(u.replace(/^https?:\/\/(www\.)?/, '').slice(0, 42))}</a><button type="button" class="btn-x" data-rm="${i}" aria-label="Rimuovi video">✕</button></li>`).join('');
+      `<li>${thumbOf(u) ? `<img src="${esc(thumbOf(u))}" alt="" width="64" height="36" loading="lazy" onerror="this.remove()">` : ''}<a href="${esc(u)}" target="_blank" rel="noopener">▶ ${esc(u.replace(/^https?:\/\/(www\.|m\.)?/, '').slice(0, 42))}</a><button type="button" class="btn-x" data-rm="${i}" aria-label="Rimuovi video">✕</button></li>`).join('');
     drawVids();
     dlg.querySelector('#vids').onclick = e => { const b = e.target.closest('[data-rm]'); if (b) { videos.splice(+b.dataset.rm, 1); drawVids(); } };
     f.url.onkeydown = e => { if (e.key === 'Enter') { e.preventDefault(); addUrl(); } };
     const addUrl = () => {
-      const u = f.url.value.trim(); if (!u) return true;
-      if (!isUrl(u)) { msg.textContent = 'Il link deve iniziare con http:// o https://'; return false; }
+      const u0 = f.url.value.trim(); if (!u0) return true;
+      const u = parseVideo(u0)?.url;
+      if (!u) { msg.textContent = 'Non sembra un link: incolla l\'indirizzo del video.'; return false; }
       if (!videos.includes(u)) videos.push(u);
-      f.url.value = ''; msg.textContent = ''; drawVids(); return true;
+      f.url.value = ''; f.url.dispatchEvent(new Event('input')); msg.textContent = ''; drawVids(); return true;
     };
     f.onsubmit = async e => {
       e.preventDefault();
