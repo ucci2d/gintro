@@ -1,0 +1,22 @@
+/* v1.5-0: scrittura rapida, video facili */
+.ed-addrow{display:flex;gap:8px;flex-wrap:wrap}
+.dlg.quick{width:min(640px,calc(100% - 16px))}
+.dlg.quick textarea{font:500 .95rem/1.5 ui-monospace,Menlo,Consolas,monospace;min-height:150px}
+.qk-prev{list-style:none;margin:0;padding:0;display:grid;gap:6px;max-height:42dvh;overflow:auto}
+.qk-meta{color:var(--accent);font-size:.85rem}
+.qk-row{display:flex;gap:8px;background:var(--surface-2);border-radius:10px;padding:8px;border-left:3px solid transparent}
+.qk-row.linked{border-left-color:var(--accent)}
+.qk-main{flex:1;min-width:0;display:grid;gap:4px}
+.qk-name{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.qk-ok{color:var(--accent)}
+.qk-rx{font-size:.85rem;color:var(--muted)}.qk-note{font-style:italic}
+.qk-sel{min-height:40px;padding:4px 8px;font-size:.85rem}
+.vf{display:grid;gap:6px}
+.vf-row{display:flex;gap:6px;flex-wrap:wrap}
+.vf-row .inp{flex:1 1 180px;min-width:0}
+.vf-prev{display:flex;gap:10px;align-items:center;font-size:.8rem;color:var(--muted);word-break:break-all}
+.vf-prev img{border-radius:6px;width:96px;height:54px;object-fit:cover;background:#000}
+.sh-vids{display:flex;gap:8px;overflow-x:auto;padding:2px 0}
+.sh-vid{flex:none;min-height:44px;display:grid;gap:2px;justify-items:center;background:var(--surface-2);border:2px solid var(--border);border-radius:10px;padding:4px;color:var(--text);cursor:pointer}
+.sh-vid[aria-pressed="true"]{border-color:var(--accent)}
+.sh-vid img{border-radius:6px;display:block}
