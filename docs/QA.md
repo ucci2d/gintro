@@ -41,3 +41,15 @@ Metodo: Chrome headless 157 (`--use-mock-keychain --password-store=basic`), pilo
 | Import backup aggiorna subito Impostazioni (nome trainer cambiato nel file → visibile senza cambiare vista) | ✅ |
 | Meta iOS in `index.html` e icone PNG nel manifest | ✅ (PNG generate dal workflow, non presenti in locale) |
 | Console senza errori | ✅ |
+
+## RAK-14 — Link cliente (Chrome headless via CDP, 390 e 1400px)
+| Controllo | Esito |
+|---|---|
+| Link generato (scheda demo: 638 caratteri), decodifica ok, nessuna anamnesi/`info` nel payload | ✅ |
+| Vista cliente: nav nascosta, giorni/blocchi/esercizi, superserie A/B, nessun overflow orizzontale | ✅ |
+| Serie spuntate, carico, «completato» con data: persistono dopo ricarica (chiave = hash link) | ✅ |
+| ▶ apre modale con iframe `youtube-nocookie` e si chiude | ✅ (riproduzione reale non verificabile offline) |
+| Link corrotto → «Link non valido» | ✅ |
+| «Invia al cliente» nell'editor: dialog con link, nessun overflow | ✅ |
+| Avviso >6000 caratteri + PDF | ✅ codice (non provato con scheda enorme) |
+| Console senza errori | ✅ |
