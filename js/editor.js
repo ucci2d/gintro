@@ -5,6 +5,7 @@ import { renderPreview, openPreview, printPlan, copyWhatsApp } from './doc.js';
 import { toast } from './ui.js';
 import { openShare } from './share.js';
 import { openQuick } from './quick.js';
+export { weekLabel } from './progress.js';
 
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 export const BLOCK_TITLES = ['Mobilità', 'Mobilità + Core', 'Stabilità', 'Respirazione', 'Allenamento forza', 'Circuito', 'Addome'];
@@ -92,11 +93,12 @@ function draw() {
   const scrollY = window.scrollY;
   const d = curDay();
   root.innerHTML = `<div class="ed-split"><div class="ed-col"><div class="ed-top"><a href="#schede" class="ed-back" aria-label="Torna alle schede">‹ Schede</a><span id="ed-status" class="ed-status" role="status">Salvato</span></div>
-    <div class="ed-tools"><button class="btn btn-accent" data-act="doc-share">Invia al cliente</button><button class="btn ed-btn-prev" data-act="doc-prev">Anteprima</button><button class="btn" data-act="doc-print">Stampa / PDF</button><button class="btn" data-act="doc-wa">Copia testo WhatsApp</button></div>
+    <div class="ed-tools"><button class="btn btn-accent" data-act="doc-share">Invia al cliente</button><button class="btn ed-btn-prev" data-act="doc-prev">Anteprima</button><button class="btn" data-act="doc-print">Stampa / PDF</button><button class="btn" data-act="doc-wa">Copia testo WhatsApp</button><button class="btn" data-act="plan-dup">Duplica con progressione</button><button class="btn" data-act="plan-tpl">Salva come modello</button></div>
     <details class="ed-head" ${openHead ? 'open' : ''}><summary>${esc(plan.title || 'Scheda')} <small>${esc(fmtDate(plan.date))}</small></summary>
       <div class="ed-grid">
         <label>Titolo<input class="inp" data-f="title" value="${esc(plan.title)}"></label>
         <label>Data<input class="inp" type="date" data-f="date" value="${esc(plan.date)}"></label>
+        <div class="ed-wide ed-week"><label>Settimana n<input class="inp" type="number" inputmode="numeric" min="1" max="99" data-f="weekN" value="${esc(plan.weekN)}" placeholder="es. 2"></label><label>Durata (settimane)<input class="inp" type="number" inputmode="numeric" min="1" max="99" data-f="weekOf" value="${esc(plan.weekOf)}" placeholder="es. 4"></label></div>
         ${HEAD_FIELDS.map(([k, l]) => `<label class="ed-wide">${l}<textarea class="inp" rows="${k === 'finalNote' ? 2 : 1}" data-f="${k}">${esc(plan[k])}</textarea>
           <span class="ed-chips">${(root._chips[k] || []).map(c => `<button type="button" class="chip chip-s" data-chip="${k}" data-v="${esc(c)}">${esc(c.length > 34 ? c.slice(0, 33) + '…' : c)}</button>`).join('')}</span></label>`).join('')}
       </div></details>
@@ -165,6 +167,8 @@ function onClick(e) {
     case 'doc-prev': return openPreview(plan);
     case 'doc-print': return flush().then(() => printPlan(plan));
     case 'doc-share': return flush().then(() => openShare(plan, () => printPlan(plan)));
+    case 'plan-dup': return flush().then(() => import('./plans.js')).then(m => m.duplicateDialog(plan));
+    case 'plan-tpl': return flush().then(() => import('./plans.js')).then(m => m.saveTemplateDialog(plan));
     case 'doc-wa': return copyWhatsApp(plan).then(ok => { toast(ok ? 'Copiato' : 'Copia non riuscita'); });
     case 'day-add': plan.days.push({ id: store.uuid(), name: `Giorno ${plan.days.length + 1}`, blocks: [] }); day = plan.days.length - 1; return done();
     case 'day-ren': { const n = prompt('Nome del giorno', d.name); if (n?.trim()) { d.name = n.trim(); done(); } return; }
