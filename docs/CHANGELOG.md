@@ -73,3 +73,14 @@
 - Nuovo `js/client.js` + `css/client.css`: vista cliente chiara e mobile-first (senza menu): giorni → blocchi → esercizi con nome, prescrizione, note, ▶ (modale con embed `youtube-nocookie`, fallback link; per URL non YouTube solo link). Il cliente spunta le serie, scrive il carico per esercizio, segna l'allenamento (giorno) completato con data (e può annullare). Tutto in localStorage con chiave = hash del link (`rakan-cl-…`). Pulsante «Installa sul telefono» (via `install.js`) e banner iPhone. Link non valido → messaggio.
 - `app.js`: con `#c=` nasconde la navigazione e non inizializza lo store/dati demo. `sw.js` v12.
 - Limite: l'app installata riparte da `start_url` (senza il link): il cliente riapre il link dal messaggio.
+
+## RAK-18 — v1.5-0: scrittura rapida «come scrive Gianluca» + video facili (2026-11-17)
+- Nuovo `js/parse.js` (funzioni pure): parser tollerante di una riga per esercizio — `3x12`, `4x10+12+15`, tempi `40"` `1'30`, `MAX`, `pg/pb/pl` e «per gamba/braccio/lato», `20kg`, `rec 1'30`, tecniche (stripping, piramide, fermo, isometria, eccentrica, cedimento), note tra `( )`; `A + B` = superserie (le parentesi con solo «15 rep»/«1'» sono prescrizione); «ripetere 3 volte, rec 1'30" a fine giro» imposta giri/recupero e fa diventare il blocco un circuito. Abbinamento fuzzy alla libreria (senza accenti, plurali/prefissi, errori di battitura): automatico se sicuro, altrimenti «Nuovo esercizio» con menu dei candidati.
+- Nuovo `js/quick.js`: pulsante «⚡ Scrivi veloce» in ogni blocco → testo libero + anteprima delle righe interpretate (lettere A/B, prescrizione, nota, menu per correggere l'abbinamento; si corregge anche riscrivendo la riga). Per esercizi nuovi o senza video compare il campo video. Senza prescrizione scritta si usa l'ultima (`lastRx`).
+- Nuovo `js/video.js`: qualunque link YouTube (youtu.be, watch?v=, shorts/, m.youtube.com, con parametri, anche dentro a un testo) → link pulito `https://youtu.be/ID` + miniatura subito; «Incolla» (`navigator.clipboard.readText`, con messaggio di ripiego); «Cerca su YouTube» (nuova scheda). Usato nel bottom sheet, in anteprima e nella Libreria.
+- Più video per esercizio: nel sheet miniature selezionabili, il video scelto va al cliente e resta legato all'esercizio in libreria (video nuovo aggiunto automaticamente come predefinito).
+- Libreria che impara (`js/learn.js`): se in scheda cambi nome / video predefinito / nota, chiede «Aggiorna anche in libreria?». Il sheet ora ha il campo Nome.
+- Android PWA: `share_target` (GET) nel manifest + `js/shared.js`: YouTube → Condividi → Rakan apre «Video ricevuto» con l'esercizio in modifica (o suggerito/nuovo) come destinazione. Stili nuovi in `css/quick.css`. `sw.js` v13.
+
+## Bug trovati e corretti (RAK-18)
+- Il campo video generico non deve finire nei dati della riga (`url` escluso dal salvataggio).
