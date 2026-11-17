@@ -4,6 +4,7 @@ import { renderEditor } from './editor.js';
 import { renderSettings } from './settings.js';
 import { renderHome, renderClients } from './plans.js';
 import { isClientHash, renderClient } from './client.js';
+import { takeShared, openShared } from './shared.js';
 // Shell dell'app: navigazione, routing con hash e registrazione del service worker.
 const ICONS = {
   schede: '<path d="M7 3h8l4 4v14H7z"/><path d="M15 3v4h4M10 12h6M10 16h6"/>',
@@ -72,6 +73,8 @@ function setNav(r, title) {
 window.addEventListener('hashchange', render);
 if (!isClientHash()) store.init();
 render();
+const shared = isClientHash() ? null : takeShared();   // YouTube → Condividi → Rakan (Web Share Target)
+if (shared) openShared(shared);
 
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('sw.js').catch(() => {});
