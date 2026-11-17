@@ -1,7 +1,7 @@
 // Service worker: cache offline dei file statici (cache-first, aggiornamento in background).
-const CACHE = 'rakan-v11';
+const CACHE = 'rakan-v12';
 const ASSETS = [
-  './', 'index.html', 'manifest.webmanifest', 'css/app.css', 'css/doc.css', 'js/app.js', 'js/ui.js', 'js/store.js', 'js/library.js', 'js/editor.js', 'js/sheet.js', 'js/doc.js', 'js/plans.js', 'js/settings.js', 'js/install.js', 'data/exercises.json',
+  './', 'index.html', 'manifest.webmanifest', 'css/app.css', 'css/doc.css', 'css/client.css', 'js/app.js', 'js/ui.js', 'js/store.js', 'js/library.js', 'js/editor.js', 'js/sheet.js', 'js/doc.js', 'js/plans.js', 'js/settings.js', 'js/install.js', 'js/share.js', 'js/client.js', 'data/exercises.json',
   'icons/icon.svg', 'icons/icon-192.png', 'icons/icon-512.png', 'icons/icon-maskable-512.png', 'icons/apple-touch-icon.png',
 ];
 
