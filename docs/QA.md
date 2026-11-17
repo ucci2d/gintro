@@ -1,0 +1,33 @@
+# QA — Rakan (Fase 2b, 2026-11-17)
+
+Metodo: Chrome headless 157 (`--use-mock-keychain --password-store=basic`), pilotato via CDP, viewport 390×844 e 1400×900, cache disattivata, profilo pulito. Dati: solo «Cliente demo». Esito = ✅ ok · ⚠️ ok con nota · ❌ da fare.
+
+| # | Funzione | Esito | Note |
+|---|----------|-------|------|
+| 1 | Iscritti: nuovo (home, elenco, dentro Nuova scheda), ricerca, storico schede | ✅ | Toast «Iscritto aggiunto»; stato vuoto con pulsante «+ Nuovo iscritto» |
+| 2 | Libreria: ricerca, filtri, nuovo esercizio con video, modifica, elimina | ✅ | Toast «Salvato» / «Eliminato» |
+| 3 | Libreria: import multiplo (NOME;link) con anteprima e categoria per riga | ✅ | Toast «Importati N esercizi» |
+| 4 | Modelli (4) → editor con blocchi, circuito (giri/recupero) | ✅ | Intestazione chiusa |
+| 5 | Scheda vuota → intestazione aperta | ✅ | |
+| 6 | Duplica ultima scheda (nuovi id, data di oggi) | ✅ | Intestazione chiusa |
+| 7 | Superserie (⛓): etichette A1/A2/B, barra laterale, anche nel documento | ✅ | |
+| 8 | Bottom sheet esercizio: ricerca, chip, «Aggiungi», «Aggiungi e continua» | ✅ | Toast «Aggiunto» / «Salvato» (visibile sopra il sheet) |
+| 9 | Anteprima (mobile: dialog; desktop ≥1200px: affiancata live) | ✅ | |
+| 10 | PDF (`window.print`, A4, solo documento) | ✅ | PDF generato da print CSS: link URI presenti (20 nella scheda di prova) |
+| 11 | Testo WhatsApp + Copia | ✅ | Toast «Copiato» |
+| 12 | Impostazioni (trainer, logo, accento, nota, colonna Carico) | ✅ | Toast «Salvato» |
+| 13 | Backup export / import (round-trip, file non valido rifiutato) | ✅ | 25 schede esportate, svuotate, reimportate = 25; `{"x":1}` → «Non è un backup di Rakan» |
+| 14 | Home: ricerca schede se >10 | ✅ | Fino a 10 recenti; con ricerca cerca in tutte; «Nessun risultato» |
+| 15 | Offline dopo il primo caricamento | ✅ | Con rete spenta: Home e Libreria (239 esercizi) si aprono dal service worker |
+| 16 | PWA installabile | ⚠️ | Manifest valido (standalone, 4 icone) e SW attivo (`rakan-v10`). Il tasto «Installa» e le icone PNG dipendono dal deploy Pages (le PNG le genera il workflow): non verificabile da localhost headless |
+| 17 | Mobile 390px: nessun overflow orizzontale (Home, Iscritti, Libreria, Impostazioni, Editor) | ✅ | |
+| 18 | Console: nessun errore | ✅ | 390 e 1400px |
+| 19 | prefers-reduced-motion | ✅ | Tutte le animazioni/transizioni disattivate |
+
+## Bug trovati e corretti
+- Il toast sparirebbe insieme al dialog/sheet che lo contiene → ora è un popover nel top layer (resta sopra al sheet).
+- L'intestazione dell'editor si apriva in base a un valore globale ricordato dalla prima scheda → ora si decide per scheda (aperta solo se non ha esercizi) e si ricorda la scelta nella stessa scheda.
+
+## Note / limiti
+- Verifica su Safari iOS reale non possibile da qui (solo emulazione 390px).
+- «Importa backup» non ricarica la vista corrente: serve cambiare schermata per vedere i dati importati.

@@ -1,5 +1,6 @@
 // Impostazioni trainer (brief §4 Settings) + backup dati.
 import * as store from './store.js';
+import { toast } from './ui.js';
 
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 export const SWATCHES = ['#0F766E', '#1D4ED8', '#7C3AED', '#BE123C', '#C2410C', '#14161A'];
@@ -23,7 +24,7 @@ export function resizeImage(file, max = 600) {
 
 export async function renderSettings(view, title, sub) {
   let s = await store.getSettings();
-  const save = patch => { s = { ...s, ...patch }; return store.saveSettings(s); };
+  const save = patch => { s = { ...s, ...patch }; return Promise.resolve(store.saveSettings(s)).then(r => { toast('Salvato'); return r; }); };
   const draw = () => {
     view.innerHTML = `<h1 class="view-title">${title}</h1><p class="view-sub">${sub}</p>
     <section class="set-card"><h2>Trainer</h2>
@@ -60,12 +61,12 @@ export async function renderSettings(view, title, sub) {
     document.getElementById('bk-exp').onclick = async () => {
       const url = URL.createObjectURL(new Blob([await store.exportBackup()], { type: 'application/json' }));
       const a = Object.assign(document.createElement('a'), { href: url, download: `rakan-backup-${new Date().toISOString().slice(0, 10)}.json` });
-      a.click(); URL.revokeObjectURL(url); msg.textContent = 'Backup esportato.';
+      a.click(); URL.revokeObjectURL(url); msg.textContent = 'Backup esportato.'; toast('Backup esportato');
     };
     document.getElementById('bk-imp').onchange = async e => {
       const f = e.target.files[0]; if (!f) return;
       if (!confirm('L\'importazione sostituisce tutti i dati attuali. Continuare?')) return;
-      try { await store.importBackup(await f.text()); msg.textContent = 'Backup importato.'; } catch (err) { msg.textContent = 'Errore: ' + err.message; }
+      try { await store.importBackup(await f.text()); msg.textContent = 'Backup importato.'; toast('Backup importato'); } catch (err) { msg.textContent = 'Errore: ' + err.message; }
     };
   }
   draw();
