@@ -30,4 +30,14 @@ Metodo: Chrome headless 157 (`--use-mock-keychain --password-store=basic`), pilo
 
 ## Note / limiti
 - Verifica su Safari iOS reale non possibile da qui (solo emulazione 390px).
-- «Importa backup» non ricarica la vista corrente: serve cambiare schermata per vedere i dati importati.
+- (Risolto in RAK-13) «Importa backup» ora ridisegna subito Impostazioni.
+
+## RAK-13 — Fase 3 (Chrome headless via CDP, 390 e 1400px)
+| Controllo | Esito |
+|---|---|
+| Sezione «Installa Rakan sul telefono» in Impostazioni, nessun overflow | ✅ |
+| Pulsante «Installa» compare con `beforeinstallprompt`, chiama `prompt()` e poi si nasconde | ✅ |
+| Banner iOS con UA iPhone/Safari: appare, chiudibile, X ricordata in localStorage; assente su desktop | ✅ (UA emulato, non iPhone reale) |
+| Import backup aggiorna subito Impostazioni (nome trainer cambiato nel file → visibile senza cambiare vista) | ✅ |
+| Meta iOS in `index.html` e icone PNG nel manifest | ✅ (PNG generate dal workflow, non presenti in locale) |
+| Console senza errori | ✅ |
