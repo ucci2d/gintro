@@ -1,6 +1,7 @@
 // Impostazioni trainer (brief §4 Settings) + backup dati.
 import * as store from './store.js';
 import { toast } from './ui.js';
+import { canPrompt, onChange, promptInstall } from './install.js';
 
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 export const SWATCHES = ['#0F766E', '#1D4ED8', '#7C3AED', '#BE123C', '#C2410C', '#14161A'];
@@ -41,6 +42,11 @@ export async function renderSettings(view, title, sub) {
       <label>Nota a piè di pagina<textarea class="inp" data-f="footerNote" rows="2" placeholder="es. Per dubbi scrivimi su WhatsApp">${esc(s.footerNote)}</textarea></label>
       <label class="set-chk"><input type="checkbox" id="set-load" ${s.showLoadColumn !== false ? 'checked' : ''}>Mostra la colonna «Carico» da compilare a mano</label>
     </section>
+    <section class="set-card"><h2>Installa Rakan sul telefono</h2>
+      <p class="set-help"><strong>iPhone</strong> (Safari): tocca Condividi → «Aggiungi alla schermata Home».</p>
+      <p class="set-help"><strong>Android</strong> (Chrome): tocca ⋮ → «Installa app» o «Aggiungi a schermata Home».</p>
+      <div><button type="button" class="btn" id="set-install" hidden style="min-height:44px;padding:0 16px">Installa</button></div>
+    </section>
     <section class="empty"><strong>Backup dati</strong>I dati restano su questo dispositivo: esporta un backup per sicurezza.<br><br>
     <button id="bk-exp" class="btn" style="min-height:44px;padding:0 16px">Esporta backup</button>
     <label class="btn" style="display:inline-block;min-height:44px;line-height:44px;padding:0 16px;cursor:pointer">Importa backup<input id="bk-imp" type="file" accept="application/json" hidden></label>
@@ -57,6 +63,10 @@ export async function renderSettings(view, title, sub) {
       try { await save({ logoDataUrl: await resizeImage(f) }); draw(); } catch (err) { document.getElementById('bk-msg').textContent = 'Errore: ' + err.message; }
     };
     const rm = document.getElementById('set-logo-rm'); if (rm) rm.onclick = async () => { await save({ logoDataUrl: '' }); draw(); };
+    const ib = document.getElementById('set-install');
+    const sync = () => { ib.hidden = !canPrompt(); };
+    sync(); ib.onclick = promptInstall;
+    const off = onChange(() => { if (ib.isConnected) sync(); else off(); });
     const msg = document.getElementById('bk-msg');
     document.getElementById('bk-exp').onclick = async () => {
       const url = URL.createObjectURL(new Blob([await store.exportBackup()], { type: 'application/json' }));
@@ -66,7 +76,7 @@ export async function renderSettings(view, title, sub) {
     document.getElementById('bk-imp').onchange = async e => {
       const f = e.target.files[0]; if (!f) return;
       if (!confirm('L\'importazione sostituisce tutti i dati attuali. Continuare?')) return;
-      try { await store.importBackup(await f.text()); msg.textContent = 'Backup importato.'; toast('Backup importato'); } catch (err) { msg.textContent = 'Errore: ' + err.message; }
+      try { await store.importBackup(await f.text()); s = await store.getSettings(); draw(); document.getElementById('bk-msg').textContent = 'Backup importato.'; toast('Backup importato'); } catch (err) { msg.textContent = 'Errore: ' + err.message; }
     };
   }
   draw();
