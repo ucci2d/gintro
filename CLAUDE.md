@@ -2,6 +2,17 @@
 
 Leggi tutto questo file prima di ogni task. È la fonte di verità del progetto.
 
+## 0-bis. I due pilastri del prodotto (decisi dal committente, prevalgono su tutto)
+1. **Compilare una scheda e allegare i video deve essere facilissimo**, rispettando il modo in cui Gianluca ragiona e scrive (§5): scrittura rapida in testo libero come nelle sue schede, video allegabili incollando qualunque link YouTube o condividendo dall'app YouTube.
+2. **Mandare la scheda e farla vedere bene al cliente su qualsiasi telefono** (iOS/Android, da 320px a tablet, anche dentro il browser di WhatsApp): vista cliente leggibile, video a un tocco, nessuno scroll orizzontale, rispetto della dimensione carattere di sistema e delle safe-area.
+
+## 0. Priorità del committente (in ordine)
+1. **Creare nuove schede in modo velocissimo** (duplica ultima scheda, modelli, scrittura rapida, prescrizione a chip, ultima prescrizione ricordata).
+2. **Inserire nuovi iscritti in modo facile**: un solo campo obbligatorio (nome), accessibile da ovunque.
+3. **Inserire nuovi esercizi e video in modo facile**: dalla ricerca, incollando un link, import multiplo.
+4. **Scalabilità**: centinaia di iscritti e migliaia di schede senza rallentare; tutto l'accesso ai dati passa da `store.js` (interfaccia asincrona, schemaVersion + migrazioni), pronto per un backend in futuro.
+5. **Nessun costo e nessun dato di pazienti su server** finché il committente non decide diversamente.
+
 ## 1. Cosa stiamo costruendo
 Rakan è un'app (PWA) per **personal trainer** che serve a **compilare velocemente schede di allenamento curate** e consegnarle al paziente/cliente come documento chiaro, con **il video di ogni esercizio cliccabile sul nome dell'esercizio**, così il cliente si allena in autonomia.
 Utente principale: Gianluca Capelli, personal trainer (lavora da PC e da telefono).
