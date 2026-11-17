@@ -30,6 +30,15 @@ a.doc-name{text-decoration:underline;text-decoration-color:var(--doc-accent);tex
 .doc-final{margin-top:14px;padding:10px 12px;border-left:4px solid var(--doc-accent);background:#f6f8f8;font-weight:500;break-inside:avoid;-webkit-print-color-adjust:exact;print-color-adjust:exact}
 .doc-foot{margin-top:12px;padding-top:8px;border-top:1px solid #d6d9dd;font-size:8.5pt;color:var(--soft);text-align:center}
 
+/* QR: grande in testa (link cliente), piccolo accanto a ogni esercizio (opzione stampa) */
+.doc-clqr{display:flex;gap:12px;align-items:center;margin:0 0 10px;padding:8px 10px;border:1px solid #d6d9dd;border-radius:6px;break-inside:avoid}
+.doc-clqr div{display:grid;gap:2px;min-width:0}.doc-clqr strong{font:800 11pt Archivo,Inter,sans-serif;text-transform:uppercase;color:var(--doc-accent)}.doc-clqr span{font-size:9pt;color:var(--soft)}
+.doc-qrbig{flex:none;display:block}
+.doc-qrw{flex:none;align-self:center}
+.doc-qr{display:block;width:15mm;height:15mm}
+.doc .doc-qr-big{display:block;width:var(--qr-mm,40mm);height:var(--qr-mm,40mm)}
+@media screen and (max-width:640px){.doc .doc-qr-big{width:min(var(--qr-mm,40mm),46vw);height:auto;aspect-ratio:1}.doc-clqr{flex-wrap:wrap}.doc-qrw .doc-qr{width:56px;height:56px}.doc-qrw{margin-left:30px}}
+
 /* Schermi stretti (solo a schermo, la stampa resta A4): reflow */
 @media screen and (max-width:640px){
   .doc{padding:14px 12px;font-size:10pt;overflow-wrap:anywhere}
