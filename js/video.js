@@ -24,6 +24,8 @@ export function parseVideo(text) {
   try { new URL(raw); } catch { return null; }
   return { url: raw, id: '', thumb: '' };
 }
+// Link di YouTube senza un id valido (es. canale, playlist, id troncato) → vero: serve un messaggio chiaro.
+export const isBrokenYt = raw => { try { const u = new URL(String(raw).trim()); return (YT_HOSTS.test(u.hostname) || /^(?:www\.)?youtu\.be$/i.test(u.hostname)) && !ytId(raw); } catch { return false; } };
 export const searchUrl = name => `https://www.youtube.com/results?search_query=${encodeURIComponent(String(name || '').trim())}`;
 export const thumbOf = url => parseVideo(url)?.thumb || '';
 
@@ -37,11 +39,13 @@ export function videoField(opts = {}) {
     <div class="vf-prev" hidden></div><p class="msg vf-msg" role="status"></p>`;
   const inp = el.querySelector('input'), prev = el.querySelector('.vf-prev'), msg = el.querySelector('.vf-msg');
   const show = () => {
-    const v = parseVideo(inp.value);
+    let v = parseVideo(inp.value);
+    const broken = !!v && isBrokenYt(v.url);
+    if (broken) v = null;
     el.dataset.url = v ? v.url : '';
     prev.hidden = !v;
     prev.innerHTML = v ? `${v.thumb ? `<img src="${esc(v.thumb)}" alt="" width="96" height="54" loading="lazy" onerror="this.remove()">` : ''}<span>${esc(v.url)}</span>` : '';
-    msg.textContent = inp.value.trim() && !v ? 'Non sembra un link: incolla l\'indirizzo del video.' : '';
+    msg.textContent = !inp.value.trim() ? '' : broken ? 'Link YouTube incompleto: serve l\'indirizzo di un singolo video.' : !v ? 'Non sembra un link: incolla l\'indirizzo del video.' : '';
     opts.onChange?.(v ? v.url : '');
   };
   inp.addEventListener('input', show);
@@ -57,4 +61,18 @@ export function videoField(opts = {}) {
   el.clear = () => { inp.value = ''; show(); };
   el.setName = n => { opts.getName = () => n; };
   return el;
+}
+
+// Riproduzione in modale (youtube-nocookie) per controllare l'esercizio senza uscire dall'app.
+export function playVideo(url, title = '') {
+  const id = ytId(url);
+  const dlg = document.createElement('dialog');
+  dlg.className = 'dlg vp';
+  dlg.innerHTML = `<div class="vp-bar"><strong>${esc(title || 'Video')}</strong><button type="button" class="btn" data-x>Chiudi</button></div>
+    ${id ? `<iframe class="vp-frame" src="https://www.youtube-nocookie.com/embed/${encodeURIComponent(id)}?rel=0&playsinline=1&autoplay=1" title="${esc(title || 'Video esercizio')}" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe>` : ''}
+    <a class="vp-link" href="${esc(url)}" target="_blank" rel="noopener">Apri su YouTube</a>`;
+  document.body.append(dlg);
+  dlg.addEventListener('click', e => { if (e.target === dlg || e.target.closest('[data-x]')) dlg.close(); });
+  dlg.addEventListener('close', () => dlg.remove());
+  dlg.showModal();
 }

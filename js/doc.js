@@ -1,12 +1,23 @@
 // Documento cliente (A4), stampa/PDF e testo WhatsApp (brief §7).
 import * as store from './store.js';
 import { labels, rxSummary, weekLabel } from './editor.js';
+import { qrSvg } from './qr.js';
+import { buildLink } from './share.js';
 
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const safeUrl = u => /^https?:\/\//i.test(u || '') ? u : '';
 const safeColor = c => /^#[0-9a-f]{3,8}$/i.test(c || '') ? c : '#0F766E';
 const fmtDate = d => { const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(d || ''); return m ? `${m[3]}/${m[2]}/${m[1]}` : (d || ''); };
 const nl = s => esc(s).replace(/\n/g, '<br>');
+
+// QR grande in testa al documento: porta alla vista cliente (v1.5-A). Omesso se il link non entra in un QR.
+function clientQr(link) {
+  const svg = link ? qrSvg(link, 'doc-qr doc-qr-big') : '';
+  if (!svg) return '';
+  const n = +/data-n="(\d+)"/.exec(svg)[1];
+  const mm = Math.min(70, Math.max(34, Math.round(n * 0.42)));
+  return `<div class="doc-clqr" style="--qr-mm:${mm}mm"><a href="${esc(link)}" class="doc-qrbig">${svg}</a><div><strong>Apri la scheda sul telefono</strong><span>Inquadra il QR con la fotocamera: trovi la scheda con tutti i video a un tocco.</span></div></div>`;
+}
 
 // Raggruppa le righe in superserie (item.linked = unito al precedente).
 export function groupItems(items) {
@@ -15,16 +26,17 @@ export function groupItems(items) {
   return groups;
 }
 
-function itemHtml({ it, lab }, showLoad) {
+function itemHtml({ it, lab }, showLoad, qr) {
   const url = safeUrl(it.video), name = esc(it.name || 'Esercizio');
   const rx = rxSummary(it);
   return `<div class="doc-it"><span class="doc-lab">${esc(lab)}</span>
     <div class="doc-body">${url ? `<a class="doc-name" href="${esc(url)}">${name}<span class="doc-play" aria-hidden="true"> ▶</span></a>` : `<span class="doc-name">${name}</span>`}
       ${rx ? `<span class="doc-pill">${esc(rx)}</span>` : ''}${it.note ? `<div class="doc-note">${nl(it.note)}</div>` : ''}</div>
+    ${qr && url ? `<span class="doc-qrw" title="Video di ${name}">${qrSvg(url, 'doc-qr')}</span>` : ''}
     ${showLoad ? '<span class="doc-load" aria-label="Carico"></span>' : ''}</div>`;
 }
 
-function blockHtml(b, showLoad) {
+function blockHtml(b, showLoad, qr) {
   const head = [b.title || ({ circuito: 'Circuito', lista: 'Lista', serie: 'Serie' }[b.kind])];
   const meta = [];
   if (b.kind === 'circuito') { if (b.rounds) meta.push(`ripetere ${esc(b.rounds)} volte`); if (b.rest) meta.push(`recupero ${esc(b.rest)} a fine giro`); }
@@ -32,10 +44,10 @@ function blockHtml(b, showLoad) {
   return `<section class="doc-block"><h3 class="doc-bh"><span>${esc(head[0])}</span>${meta.length ? `<small>${meta.join(' · ')}</small>` : ''}</h3>
     ${b.note ? `<div class="doc-note doc-bnote">${nl(b.note)}</div>` : ''}
     ${showLoad && groups.length ? '<div class="doc-cols"><span>Esercizio</span><span>Carico</span></div>' : ''}
-    ${groups.map(g => `<div class="doc-grp ${g.length > 1 ? 'super' : ''}">${g.map(r => itemHtml(r, showLoad)).join('')}</div>`).join('')}</section>`;
+    ${groups.map(g => `<div class="doc-grp ${g.length > 1 ? 'super' : ''}">${g.map(r => itemHtml(r, showLoad, qr)).join('')}</div>`).join('')}</section>`;
 }
 
-export function buildDocHtml(plan, client, s) {
+export function buildDocHtml(plan, client, s, link = '') {
   const color = safeColor(s.accent), showLoad = s.showLoadColumn !== false;
   const trainer = s.trainerName || '';
   const info = [['Obiettivo', plan.goal], ['Informazioni', plan.info], ['Frequenza', plan.frequency], ['Settimana', weekLabel(plan)]].filter(x => x[1]);
@@ -47,9 +59,10 @@ export function buildDocHtml(plan, client, s) {
       <div class="doc-date">${esc(fmtDate(plan.date))}</div>
     </header>
     <h1 class="doc-title">${esc(plan.title || ('Programmazione ' + (client?.name || '')).trim())}</h1>
+    ${clientQr(link)}
     ${info.length ? `<dl class="doc-info">${info.map(([k, v]) => `<div><dt>${k}</dt><dd>${nl(v)}</dd></div>`).join('')}</dl>` : ''}
     ${text('Riscaldamento', plan.warmup)}
-    ${(plan.days || []).map(d => `<section class="doc-day"><h2 class="doc-dh">${esc(d.name)}</h2>${(d.blocks || []).map(b => blockHtml(b, showLoad)).join('')}</section>`).join('')}
+    ${(plan.days || []).map(d => `<section class="doc-day"><h2 class="doc-dh">${esc(d.name)}</h2>${(d.blocks || []).map(b => blockHtml(b, showLoad, !!s.qrVideos)).join('')}</section>`).join('')}
     ${text('Defaticamento', plan.cooldown)}
     ${plan.finalNote ? `<section class="doc-final">${nl(plan.finalNote)}</section>` : ''}
     ${s.footerNote ? `<footer class="doc-foot">${nl(s.footerNote)}</footer>` : ''}
@@ -92,19 +105,20 @@ export function buildWhatsApp(plan, client, s) {
 
 async function ctx(plan) {
   const [s, client] = await Promise.all([store.getSettings(), plan.clientId ? store.get('clients', plan.clientId) : null]);
-  return { s, client };
+  let link = ''; try { link = await buildLink(plan); } catch { /* senza link: niente QR in testa */ }
+  return { s, client, link };
 }
 
 export async function renderPreview(el, plan) {
-  const { s, client } = await ctx(plan);
-  el.innerHTML = buildDocHtml(plan, client, s);
+  const { s, client, link } = await ctx(plan);
+  el.innerHTML = buildDocHtml(plan, client, s, link);
 }
 
 export async function printPlan(plan) {
-  const { s, client } = await ctx(plan);
+  const { s, client, link } = await ctx(plan);
   let host = document.getElementById('doc-print');
   if (!host) { host = document.createElement('div'); host.id = 'doc-print'; document.body.append(host); }
-  host.innerHTML = buildDocHtml(plan, client, s);
+  host.innerHTML = buildDocHtml(plan, client, s, link);
   const prev = document.title;
   document.title = (plan.title || 'Scheda').replace(/[\\/:*?"<>|]/g, '');
   const done = () => { document.title = prev; host.innerHTML = ''; window.removeEventListener('afterprint', done); };
