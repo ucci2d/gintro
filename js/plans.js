@@ -2,6 +2,7 @@
 import * as store from './store.js';
 import { newItem, newBlock, fmtDate } from './editor.js';
 import { toast } from './ui.js';
+import { progressStep, applyProgression, nextWeek, hasRules } from './progress.js';
 
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const today = () => new Date().toISOString().slice(0, 10);
@@ -56,14 +57,30 @@ export async function lastPlanOf(clientId) {
   return all.sort((a, b) => (b.updatedAt || b.date || '').localeCompare(a.updatedAt || a.date || ''))[0];
 }
 
+// ---- Modelli personali (in `settings`, id "templates": restano sul dispositivo e finiscono nel backup) ----
+export async function personalTemplates() { return (await store.get('settings', 'templates'))?.list || []; }
+const savePersonal = list => store.put('settings', { id: 'templates', list });
+
+export async function saveAsTemplate(plan, name) {
+  const list = await personalTemplates();
+  const t = { id: 'p-' + store.uuid(), personal: true, name: name.trim(), frequency: plan.frequency || '', warmup: plan.warmup || '', cooldown: plan.cooldown || '', finalNote: plan.finalNote || '', days: cloneDays(plan.days) };
+  const n = t.days.reduce((a, d) => a + (d.blocks || []).reduce((x, b) => x + (b.items || []).length, 0), 0);
+  t.desc = `${n} ${n === 1 ? 'esercizio' : 'esercizi'} · ${t.days.length} ${t.days.length === 1 ? 'giorno' : 'giorni'}`;
+  list.push(t); await savePersonal(list); return t;
+}
+export async function renameTemplate(id, name) { const l = await personalTemplates(); const t = l.find(x => x.id === id); if (t && name.trim()) { t.name = name.trim(); await savePersonal(l); } }
+export async function deleteTemplate(id) { await savePersonal((await personalTemplates()).filter(x => x.id !== id)); }
+
 export async function createPlan(client, from) {
-  const base = { clientId: client.id, title: `Programmazione ${client.name}`, date: today(), goal: client.goal || '', info: client.info || '', frequency: '', warmup: '', cooldown: '', finalNote: '', days: [] };
+  const base = { clientId: client.id, title: `Programmazione ${client.name}`, date: today(), goal: client.goal || '', info: client.info || '', frequency: '', warmup: '', cooldown: '', finalNote: '', weekN: '', weekOf: '', days: [] };
   if (from?.type === 'last') {
     const p = await store.get('plans', from.id);
-    Object.assign(base, { goal: p.goal, info: p.info, frequency: p.frequency, warmup: p.warmup, cooldown: p.cooldown, finalNote: p.finalNote, days: cloneDays(p.days) });
+    Object.assign(base, { goal: p.goal, info: p.info, frequency: p.frequency, warmup: p.warmup, cooldown: p.cooldown, finalNote: p.finalNote, weekN: p.weekN ? nextWeek(p) : '', weekOf: p.weekOf || '', days: cloneDays(p.days) });
+    if (from.rules && hasRules(from.rules)) applyProgression(base.days, from.rules, from.scope);
   } else if (from?.type === 'tpl') {
-    const t = TEMPLATES.find(x => x.id === from.id);
-    base.frequency = t.frequency; base.days = await buildFromTemplate(t);
+    const t = TEMPLATES.find(x => x.id === from.id) || (await personalTemplates()).find(x => x.id === from.id);
+    if (t.personal) Object.assign(base, { frequency: t.frequency, warmup: t.warmup, cooldown: t.cooldown, finalNote: t.finalNote, days: cloneDays(t.days) });
+    else { base.frequency = t.frequency; base.days = await buildFromTemplate(t); }
   } else base.days = [{ id: store.uuid(), name: 'Giorno 1', blocks: [] }];
   return store.put('plans', base);
 }
@@ -74,6 +91,35 @@ function dialog(html) {
   d.addEventListener('click', e => { if (e.target === d || e.target.closest('[data-close]')) d.close(); });
   d.addEventListener('close', () => d.remove());
   document.body.append(d); d.showModal(); return d;
+}
+
+// Chiede un testo (nome modello): ritorna la stringa o null se annullato.
+export function askText(title, value = '', ok = 'Salva') {
+  return new Promise(res => {
+    const d = dialog(`<form method="dialog" class="dlg-body"><h2 class="dlg-title">${esc(title)}</h2>
+      <label>Nome<input class="inp" name="n" required maxlength="60" autocomplete="off" value="${esc(value)}"></label>
+      <div class="dlg-actions"><button type="button" class="btn" data-close>Annulla</button><button class="btn btn-accent">${esc(ok)}</button></div></form>`);
+    const f = d.querySelector('form'); f.n.focus(); f.n.select();
+    let out = null;
+    f.onsubmit = e => { e.preventDefault(); out = f.n.value.trim() || null; d.close(); };
+    d.addEventListener('close', () => res(out));
+  });
+}
+
+// «Salva come modello» da qualunque scheda.
+export async function saveTemplateDialog(plan) {
+  const name = await askText('Salva come modello', '', 'Salva modello');
+  if (!name) return false;
+  await saveAsTemplate(plan, name); toast('Modello salvato'); return true;
+}
+
+// «Duplica» una scheda qualsiasi (dall'editor) con progressione.
+export async function duplicateDialog(plan) {
+  const d = dialog('<div class="dlg-body" id="dp"></div>');
+  const client = (plan.clientId && await store.get('clients', plan.clientId)) || { id: plan.clientId || '', name: '' };
+  progressStep(d.querySelector('#dp'), plan, { title: plan.title || 'Scheda', onConfirm: async ({ rules, scope }) => {
+    const p = await createPlan(client, { type: 'last', id: plan.id, rules, scope }); d.close(); toast('Duplicato'); location.hash = '#scheda-' + p.id;
+  } });
 }
 
 // "+ Nuovo iscritto": solo il nome è obbligatorio.
@@ -116,17 +162,30 @@ export async function newPlanDialog(clientId) {
   }
 
   async function stepFrom(client) {
-    const last = await lastPlanOf(client.id);
+    const [last, mine] = await Promise.all([lastPlanOf(client.id), personalTemplates()]);
     box.innerHTML = `<h2 class="dlg-title">${esc(client.name)} · parti da</h2><div class="np-list">
-      ${last ? `<button class="btn np-row np-main" data-last>Ultima scheda <small>${esc(last.title)} · ${fmtDate(last.date)} — duplica con data di oggi</small></button>` : ''}
+      ${last ? `<button class="btn np-row np-main" data-last>Ultima scheda <small>${esc(last.title)} · ${fmtDate(last.date)} — duplica con data di oggi, anche con progressione</small></button>` : ''}
       ${TEMPLATES.map(t => `<button class="btn np-row" data-t="${t.id}">Modello: ${esc(t.name)} <small>${esc(t.desc)}</small></button>`).join('')}
+      ${mine.map(t => `<div class="np-tpl"><button class="btn np-row" data-t="${esc(t.id)}">Mio modello: ${esc(t.name)} <small>${esc(t.desc)}</small></button><button class="btn-x" data-ren="${esc(t.id)}" aria-label="Rinomina modello ${esc(t.name)}">✎</button><button class="btn-x" data-del="${esc(t.id)}" aria-label="Elimina modello ${esc(t.name)}">🗑</button></div>`).join('')}
       <button class="btn np-row" data-empty>Scheda vuota</button></div>
       <div class="dlg-actions"><button class="btn" data-back>‹ Cambia iscritto</button></div>`;
-    box.onclick = e => {
+    box.onclick = async e => {
       if (e.target.closest('[data-back]')) return stepClient();
-      if (e.target.closest('[data-last]')) return go(client, { type: 'last', id: last.id });
+      if (e.target.closest('[data-last]')) return progressStep(box, last, { title: last.title, onBack: () => stepFrom(client), onConfirm: ({ rules, scope }) => go(client, { type: 'last', id: last.id, rules, scope }) });
       const t = e.target.closest('[data-t]');
       if (t) return go(client, { type: 'tpl', id: t.dataset.t });
+      const r = e.target.closest('[data-ren]'), x = e.target.closest('[data-del]');
+      if (r) {
+        const cur = mine.find(m => m.id === r.dataset.ren);
+        const n = await askText('Rinomina modello', cur?.name, 'Rinomina');
+        if (n) { await renameTemplate(r.dataset.ren, n); toast('Modello rinominato'); }
+        return stepFrom(client);
+      }
+      if (x) {
+        const cur = mine.find(m => m.id === x.dataset.del);
+        if (confirm(`Eliminare il modello «${cur?.name}»? Le schede già create non cambiano.`)) { await deleteTemplate(x.dataset.del); toast('Modello eliminato'); stepFrom(client); }
+        return;
+      }
       if (e.target.closest('[data-empty]')) return go(client, { type: 'empty' });
     };
   }
