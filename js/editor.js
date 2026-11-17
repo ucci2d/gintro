@@ -3,6 +3,7 @@ import * as store from './store.js';
 import { openSheet } from './sheet.js';
 import { renderPreview, openPreview, printPlan, copyWhatsApp } from './doc.js';
 import { toast } from './ui.js';
+import { openShare } from './share.js';
 
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 export const BLOCK_TITLES = ['Mobilità', 'Mobilità + Core', 'Stabilità', 'Respirazione', 'Allenamento forza', 'Circuito', 'Addome'];
@@ -90,7 +91,7 @@ function draw() {
   const scrollY = window.scrollY;
   const d = curDay();
   root.innerHTML = `<div class="ed-split"><div class="ed-col"><div class="ed-top"><a href="#schede" class="ed-back" aria-label="Torna alle schede">‹ Schede</a><span id="ed-status" class="ed-status" role="status">Salvato</span></div>
-    <div class="ed-tools"><button class="btn ed-btn-prev" data-act="doc-prev">Anteprima</button><button class="btn" data-act="doc-print">Stampa / PDF</button><button class="btn" data-act="doc-wa">Copia testo WhatsApp</button></div>
+    <div class="ed-tools"><button class="btn btn-accent" data-act="doc-share">Invia al cliente</button><button class="btn ed-btn-prev" data-act="doc-prev">Anteprima</button><button class="btn" data-act="doc-print">Stampa / PDF</button><button class="btn" data-act="doc-wa">Copia testo WhatsApp</button></div>
     <details class="ed-head" ${openHead ? 'open' : ''}><summary>${esc(plan.title || 'Scheda')} <small>${esc(fmtDate(plan.date))}</small></summary>
       <div class="ed-grid">
         <label>Titolo<input class="inp" data-f="title" value="${esc(plan.title)}"></label>
@@ -162,6 +163,7 @@ function onClick(e) {
   switch (act) {
     case 'doc-prev': return openPreview(plan);
     case 'doc-print': return flush().then(() => printPlan(plan));
+    case 'doc-share': return flush().then(() => openShare(plan, () => printPlan(plan)));
     case 'doc-wa': return copyWhatsApp(plan).then(ok => { toast(ok ? 'Copiato' : 'Copia non riuscita'); });
     case 'day-add': plan.days.push({ id: store.uuid(), name: `Giorno ${plan.days.length + 1}`, blocks: [] }); day = plan.days.length - 1; return done();
     case 'day-ren': { const n = prompt('Nome del giorno', d.name); if (n?.trim()) { d.name = n.trim(); done(); } return; }
