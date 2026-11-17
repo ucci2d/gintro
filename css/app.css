@@ -175,3 +175,29 @@ html,body{overflow-x:hidden}
 .set-sw{display:flex;gap:10px;flex-wrap:wrap}
 .set-chk{display:flex!important;grid-template-columns:none;align-items:center;gap:10px;color:var(--text)!important;font-size:.95rem!important;min-height:44px}
 .set-chk input{width:22px;height:22px}
+
+/* Rifinitura (2b): toast, transizioni leggere, stati vuoti, spaziature */
+.toast{position:fixed;inset:auto;margin:0;left:50%;bottom:calc(var(--tabbar-h) + 16px + env(safe-area-inset-bottom));transform:translate(-50%,12px);z-index:100;background:var(--surface-2);color:var(--text);border:1px solid var(--border);border-radius:22px;padding:10px 18px;font-size:.9rem;font-weight:500;box-shadow:0 6px 24px rgba(0,0,0,.45);opacity:0;pointer-events:none;transition:opacity .18s ease,transform .18s ease}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+.toast::before{content:"✓";color:var(--accent);margin-right:8px;font-weight:700}
+@media (min-width:1024px){.toast{bottom:24px;left:calc(50% + var(--sidebar-w) / 2)}}
+.main>*{animation:view-in .16s ease-out}
+@keyframes view-in{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.dlg[open]{animation:dlg-in .16s ease-out}
+@keyframes dlg-in{from{opacity:0;transform:scale(.97)}to{opacity:1;transform:none}}
+.dlg::backdrop{animation:bd-in .16s ease-out}
+@keyframes bd-in{from{opacity:0}to{opacity:1}}
+.btn,.chip,.pl-card,.lib-row{transition:background-color .12s ease,border-color .12s ease,transform .12s ease}
+.btn:active,.chip:active{transform:scale(.97)}
+.pl-card:hover,.pl-card:focus-visible{border-color:var(--accent)}
+.empty .btn{margin-top:14px}
+.home-q{margin-bottom:10px}
+.pl-card strong{font-weight:600}
+.sec-title{margin:20px 0 10px}
+.ed-head summary{list-style:none}
+.ed-head summary::after{content:"▾";margin-left:auto;color:var(--muted);transition:transform .15s ease}
+.ed-head[open] summary::after{transform:rotate(180deg)}
+.ed-head summary::-webkit-details-marker{display:none}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}
+}

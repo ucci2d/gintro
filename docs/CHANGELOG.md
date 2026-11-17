@@ -54,3 +54,10 @@
 - Fix anteprima ≤640px: il documento si adatta (pill sotto il nome, casella Carico sotto la prescrizione, intestazione a capo), solo `@media screen`: stampa A4 invariata.
 - Bottom sheet esercizio: ricerca a ~85dvh con lista risultati scrollabile; «Crea «testo»» è secondario se ci sono risultati, primario (lime) solo senza risultati. `sw.js` v9.
 - Verificato in Chrome headless (≈500px di larghezza minima e 1400×900): nessun errore in console, nessun overflow, impostazioni salvate e riflesse in documento e WhatsApp. Nota: Chrome headless va lanciato con `--use-mock-keychain --password-store=basic` (evita il Portachiavi).
+
+## RAK-12 — Fase 2b: rifinitura estetica + QA (2026-11-17)
+- Nuovo `js/ui.js`: toast discreti («Aggiunto», «Copiato», «Salvato», «Duplicato», «Iscritto aggiunto», import/backup) nel top layer, sopra anche ai sheet.
+- Stati vuoti con invito all'azione (Home senza iscritti/schede, Iscritti). Home: ricerca schede quando sono più di 10 (altrimenti ultime 10).
+- Editor: intestazione chiusa di default per schede duplicate o da modello, aperta per la scheda vuota (decisione per scheda); freccia sul riepilogo.
+- Transizioni leggere (cambio vista, dialog, sheet, bottoni) disattivate con `prefers-reduced-motion`. `sw.js` v10.
+- QA completo in `docs/QA.md` (Chrome headless 390 e 1400px, nessun errore in console).

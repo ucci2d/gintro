@@ -2,6 +2,7 @@
 import * as store from './store.js';
 import { openSheet } from './sheet.js';
 import { renderPreview, openPreview, printPlan, copyWhatsApp } from './doc.js';
+import { toast } from './ui.js';
 
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 export const BLOCK_TITLES = ['Mobilità', 'Mobilità + Core', 'Stabilità', 'Respirazione', 'Allenamento forza', 'Circuito', 'Addome'];
@@ -45,7 +46,7 @@ export function rxSummary(it) {
 }
 
 // ---- Stato e salvataggio ----
-let plan = null, day = 0, root = null, timer = null, dirty = false, openHead = null;
+let plan = null, day = 0, root = null, timer = null, dirty = false, openHead = null, headFor = null;
 
 function status(t) { const s = root?.querySelector('#ed-status'); if (s) s.textContent = t; }
 let prevTimer = null;
@@ -76,7 +77,8 @@ export async function renderEditor(view, id) {
   if (!p) { view.innerHTML = '<h1 class="view-title">Scheda</h1><div class="empty"><strong>Scheda non trovata</strong><a href="#schede">Torna alle schede</a></div>'; return; }
   plan = p; day = 0; root = view;
   if (!plan.days?.length) plan.days = [{ id: store.uuid(), name: 'Giorno 1', blocks: [] }];
-  if (openHead === null) openHead = !(plan.goal || plan.warmup);
+  // Intestazione aperta solo per la scheda vuota; chiusa se duplicata o da modello (si ricorda la scelta per la stessa scheda).
+  if (headFor !== plan.id) { headFor = plan.id; openHead = !plan.days.some(d => d.blocks?.some(b => b.items?.length)); }
   const others = (await store.list('plans')).filter(x => x.id !== plan.id);
   const chips = {};
   for (const [k] of HEAD_FIELDS) chips[k] = [...new Set([...(DEFAULT_CHIPS[k] || []), ...others.map(o => o[k]).filter(v => v && v.length < 120)])].slice(0, 8);
@@ -160,7 +162,7 @@ function onClick(e) {
   switch (act) {
     case 'doc-prev': return openPreview(plan);
     case 'doc-print': return flush().then(() => printPlan(plan));
-    case 'doc-wa': return copyWhatsApp(plan).then(ok => { t.textContent = ok ? 'Copiato ✓' : 'Copia non riuscita'; setTimeout(() => { t.textContent = 'Copia testo WhatsApp'; }, 2000); });
+    case 'doc-wa': return copyWhatsApp(plan).then(ok => { toast(ok ? 'Copiato' : 'Copia non riuscita'); });
     case 'day-add': plan.days.push({ id: store.uuid(), name: `Giorno ${plan.days.length + 1}`, blocks: [] }); day = plan.days.length - 1; return done();
     case 'day-ren': { const n = prompt('Nome del giorno', d.name); if (n?.trim()) { d.name = n.trim(); done(); } return; }
     case 'day-del':
@@ -177,7 +179,7 @@ function onClick(e) {
     case 'item-up': if (moveItem(b.items, i, -1)) done(); return;
     case 'item-down': if (moveItem(b.items, i, 1)) done(); return;
     case 'item-link': if (toggleLink(b.items, i)) done(); return;
-    case 'item-dup': dupItem(b.items, i); return done();
+    case 'item-dup': dupItem(b.items, i); toast('Duplicato'); return done();
     case 'item-del': removeItem(b.items, i); return done();
   }
 }
@@ -193,7 +195,7 @@ function editItem(block, idx) {
     plan,
     onSave(out, { again }) {
       if (idx == null) block.items.push(out); else block.items[idx] = out;
-      fix(block.items); touch(); draw();
+      fix(block.items); touch(); draw(); toast(idx == null ? 'Aggiunto' : 'Salvato');
     },
   });
 }
