@@ -108,3 +108,12 @@
 - Vista cliente: titolo con `clamp(1.3rem, 7.2vw, 2.1rem)`, `overflow-wrap:normal` e `hyphens:auto` (lang=it): niente più «PROGRAMMAZIO / NE» a 320px.
 - Testi: corpo, pill, note, etichette ≥16px a tutte le larghezze; nomi esercizio 17px; colonna centrale max 680px su tablet (niente rimpicciolimento).
 - Libreria: aggiunto «PLANK» (Core, senza video, id e235). Per le librerie già inizializzate `store.js` lo aggiunge una sola volta all'avvio (flag `plank1`, nessun duplicato se esiste già). `sw.js` cache v17.
+
+## RAK-19 — v1.5-0b Bozze + ricerca video YouTube integrata (2026-11-18)
+- **Stato scheda** (`js/status.js`): Bozza (default alla creazione, salvataggio automatico già continuo), Pronta, Inviata (con data, impostata da «Invia al cliente» / «Copia WhatsApp» / «Stampa/PDF», modificabile). Le schede precedenti senza stato valgono «Pronta». Selettore stato nell'editor.
+- **Home**: sezione «Bozze» in cima, badge di stato in Home, elenco e storico iscritto, filtro Tutte/Bozze/Pronte/Inviate. Se l'app si chiude a metà dell'editor, alla riapertura «Riprendi la bozza di <iscritto>».
+- **Bozza esercizio**: i campi del foglio esercizio sono salvati in locale mentre si compila; se si chiude per errore, riaprendolo (stessa scheda e riga) si ritrovano. «Annulla»/«Cambia»/salvataggio la svuotano.
+- Avviso «BOZZA» solo nell'anteprima del trainer; mai nel documento, PDF, WhatsApp o link cliente.
+- **Cerca video** (`js/ytsearch.js`): YouTube Data API v3 chiamata dal browser (`search` 12 risultati + `videos` per la durata), griglia con miniatura/titolo/canale/durata, anteprima youtube-nocookie con «Usa questo video», «Altri risultati», filtro «Solo brevi (<4 min)», cache di sessione, contatore ricerche di oggi. Presente ovunque c'è il campo video (foglio esercizio, scrittura veloce, libreria). Senza chiave/quota/rete: messaggio + «Cerca su YouTube» in nuova scheda + Incolla.
+- **Impostazioni → Ricerca video YouTube**: chiave e parola chiave (default «esercizio tutorial»), guida in 3 passi (anche in `docs/INSTALLAZIONE.md`). La chiave è in `meta.yt` (solo locale: non nei backup esportati, non nei link cliente, non nel repo).
+- `sw.js` cache v18.

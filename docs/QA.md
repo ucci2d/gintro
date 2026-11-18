@@ -118,3 +118,18 @@ DEAD BUG 3x10
 | `store.js` sintassi, `exercises.json` valido (236 esercizi, PLANK Core senza video), CSS bilanciato | ✅ |
 | Dimensioni da CSS: testi, pill, note, carico ≥16px (solo le etichette MAIUSCOLE di obiettivo/info a 14px), nomi 17px, h1 fluido 20.8–33.6px, wrap max 680px | ✅ (da lettura del CSS) |
 | Misura nel browser sulla matrice 8 viewport (a capo titolo, font calcolati, overflow) | ❌ NON eseguita: Chrome headless in questo ambiente non ha caricato l'app (pagina bloccata; forse mancavano `--use-mock-keychain --password-store=basic`). Da rifare con quei flag o su telefono reale |
+
+## RAK-19 — v1.5-0b (Chrome headless CDP, 390 / 1400; fetch YouTube simulato con mock)
+| Verifica | Esito |
+|---|---|
+| Nuova scheda = Bozza; scheda vecchia senza stato = Pronta; sezione Bozze in Home, badge, filtri Bozze/Pronte | ✅ |
+| Riapertura a metà → «Riprendi la bozza di …» | ✅ |
+| Avviso bozza solo nell'anteprima trainer, assente nel documento cliente | ✅ |
+| «Invia al cliente» → Inviata + data; stato e data modificabili a mano; badge nello storico iscritto | ✅ |
+| Foglio esercizio chiuso per errore: campi ritrovati; svuotato dopo il salvataggio | ✅ |
+| Cerca video: precompilato nome + parola chiave; senza chiave messaggio + fallback, zero chiamate API | ✅ |
+| Con chiave (mock): griglia 12 con miniatura/titolo/canale/durata; URL API corretti; Altri risultati (24); cache; contatore; Solo brevi on/off | ✅ |
+| Anteprima youtube-nocookie + «Usa questo video» allega il video; errore quota e errore rete con messaggio e fallback, compilazione non bloccata | ✅ |
+| Chiave assente dal backup esportato | ✅ |
+| 390 e 1400px: nessun overflow (Home, Impostazioni, editor, foglio, pannello, Iscritti); console senza errori | ✅ 39/39 a entrambe le larghezze |
+| Non verificato: chiamate reali alla YouTube Data API (serve la chiave del committente); «Copia WhatsApp» e Stampa → Inviata (clipboard/print non automatizzabili in headless, stessa funzione di «Invia al cliente»); Safari iOS reale | — |
