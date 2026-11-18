@@ -35,7 +35,7 @@ export function videoField(opts = {}) {
   const el = document.createElement('div');
   el.className = 'vf';
   el.innerHTML = `<div class="vf-row"><input class="inp" name="url" type="text" inputmode="url" placeholder="Incolla il link YouTube" autocomplete="off" aria-label="Link video">
-    <button type="button" class="btn" data-vf="paste">Incolla</button><button type="button" class="btn" data-vf="search">Cerca su YouTube</button></div>
+    <button type="button" class="btn" data-vf="paste">Incolla</button><button type="button" class="btn" data-vf="yt">Cerca video</button><button type="button" class="btn" data-vf="search">Cerca su YouTube</button></div>
     <div class="vf-prev" hidden></div><p class="msg vf-msg" role="status"></p>`;
   const inp = el.querySelector('input'), prev = el.querySelector('.vf-prev'), msg = el.querySelector('.vf-msg');
   const show = () => {
@@ -52,6 +52,7 @@ export function videoField(opts = {}) {
   inp.addEventListener('paste', () => setTimeout(show, 0));
   el.addEventListener('click', async e => {
     const b = e.target.closest('[data-vf]'); if (!b) return;
+    if (b.dataset.vf === 'yt') { const m = await import('./ytsearch.js'); m.openYtSearch({ name: opts.getName?.() || '', onPick: u => { inp.value = u; show(); } }); return; }
     if (b.dataset.vf === 'search') { window.open(searchUrl(opts.getName?.() || inp.value), '_blank', 'noopener'); return; }
     let t = '';
     try { t = await navigator.clipboard.readText(); } catch { /* permesso negato o non disponibile */ }
@@ -64,15 +65,15 @@ export function videoField(opts = {}) {
 }
 
 // Riproduzione in modale (youtube-nocookie) per controllare l'esercizio senza uscire dall'app.
-export function playVideo(url, title = '') {
+export function playVideo(url, title = '', { onUse } = {}) {
   const id = ytId(url);
   const dlg = document.createElement('dialog');
   dlg.className = 'dlg vp';
   dlg.innerHTML = `<div class="vp-bar"><strong>${esc(title || 'Video')}</strong><button type="button" class="btn" data-x>Chiudi</button></div>
     ${id ? `<iframe class="vp-frame" src="https://www.youtube-nocookie.com/embed/${encodeURIComponent(id)}?rel=0&playsinline=1&autoplay=1" title="${esc(title || 'Video esercizio')}" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe>` : ''}
-    <a class="vp-link" href="${esc(url)}" target="_blank" rel="noopener">Apri su YouTube</a>`;
+    ${onUse ? '<button type="button" class="btn btn-accent vp-use" data-use>Usa questo video</button>' : ''}<a class="vp-link" href="${esc(url)}" target="_blank" rel="noopener">Apri su YouTube</a>`;
   document.body.append(dlg);
-  dlg.addEventListener('click', e => { if (e.target === dlg || e.target.closest('[data-x]')) dlg.close(); });
+  dlg.addEventListener('click', e => { if (e.target.closest('[data-use]')) { dlg.close(); onUse(); } else if (e.target === dlg || e.target.closest('[data-x]')) dlg.close(); });
   dlg.addEventListener('close', () => dlg.remove());
   dlg.showModal();
 }
