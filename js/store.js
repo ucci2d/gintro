@@ -113,6 +113,7 @@ export function init() {
     const ver = cache.meta.get('schema')?.version || 0;
     if (ver < SCHEMA_VERSION) await migrate(ver);
     if (!cache.meta.get('seeded')) await seedExercises();
+    else if (!cache.meta.get('plank1')) await addBaseExercise({ id: 'e235', n: 'PLANK', c: 'Core', v: [] }, 'plank1');
     if (!cache.meta.get('demo')) await seedDemo();
   })();
   return ready;
@@ -124,6 +125,12 @@ async function seedExercises() {
     for (const e of data) { const r = indexed('exercises', e); cache.exercises.set(r.id, r); await backend.save('exercises', r); }
     await putRaw('meta', { id: 'seeded', at: new Date().toISOString() });
   } catch { /* offline al primo avvio: riproverà al prossimo */ }
+}
+
+// Aggiunge una sola volta un esercizio base alle librerie già inizializzate (senza duplicare se esiste già per nome).
+async function addBaseExercise(e, flag) {
+  if (![...cache.exercises.values()].some(x => x.n?.trim().toUpperCase() === e.n)) { const r = indexed('exercises', e); cache.exercises.set(r.id, r); await backend.save('exercises', r); }
+  await putRaw('meta', { id: flag, at: new Date().toISOString() });
 }
 
 async function seedDemo() {
