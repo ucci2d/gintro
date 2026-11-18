@@ -18,3 +18,12 @@ Schede, iscritti ed esercizi creati restano **solo sul dispositivo** che usi: no
 3. Sull'altro dispositivo apri Rakan → **Impostazioni → Importa backup** e scegli il file. Attenzione: sostituisce i dati presenti.
 
 Consiglio: fai un backup ogni tanto, ad esempio a fine settimana.
+
+## Ricerca video YouTube dentro Rakan (facoltativa, gratuita)
+Con una chiave API gratuita, il pulsante **Cerca video** (nella scheda esercizio e nella libreria) cerca su YouTube senza uscire dall'app. Senza chiave funziona sempre «Cerca su YouTube» (nuova scheda) + «Incolla».
+
+1. Vai su [Google Cloud Console](https://console.cloud.google.com/), crea un progetto e abilita **YouTube Data API v3** (API e servizi → Libreria).
+2. **Credenziali → Crea credenziali → Chiave API**.
+3. Limita la chiave: *Restrizioni applicazione* → **Referrer HTTP** `https://ucci2d.github.io/*`; *Restrizioni API* → solo **YouTube Data API v3**. Poi incolla la chiave in Rakan: **Impostazioni → Ricerca video YouTube**.
+
+La chiave resta solo sul dispositivo (non nei backup né nei link ai clienti): su ogni dispositivo va inserita una volta. Quota gratuita: 10.000 unità al giorno, una ricerca ne costa 100 (≈100 ricerche al giorno); Rakan mostra il contatore delle ricerche di oggi e riusa i risultati già cercati nella sessione.
