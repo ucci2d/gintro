@@ -103,3 +103,8 @@
 - **Promemoria in Home** se l'ultimo backup ha più di 7 giorni (o mai fatto, dal primo uso), con pulsante verso Impostazioni. Data in `meta.lastBackup` (locale, non esportata).
 - **Statistiche in Home**: iscritti, schede del mese, top 5 esercizi più usati.
 - `sw.js` v16.
+
+## RAK-20 — Fix vista cliente e libreria (2026-11-18)
+- Vista cliente: titolo con `clamp(1.3rem, 7.2vw, 2.1rem)`, `overflow-wrap:normal` e `hyphens:auto` (lang=it): niente più «PROGRAMMAZIO / NE» a 320px.
+- Testi: corpo, pill, note, etichette ≥16px a tutte le larghezze; nomi esercizio 17px; colonna centrale max 680px su tablet (niente rimpicciolimento).
+- Libreria: aggiunto «PLANK» (Core, senza video, id e235). Per le librerie già inizializzate `store.js` lo aggiunge una sola volta all'avvio (flag `plank1`, nessun duplicato se esiste già). `sw.js` cache v17.

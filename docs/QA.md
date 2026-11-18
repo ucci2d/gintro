@@ -111,3 +111,10 @@ DEAD BUG 3x10
 | Statistiche in Home (iscritti, schede del mese, top esercizi) | ✅ |
 | 390 e 1400px: nessun overflow (Home, Impostazioni); console senza errori | ✅ |
 | Non verificato: share sheet reale su iPhone/Android (non testabile in headless) | — |
+
+## RAK-20 — Fix vista cliente (320/360/375/393/412/430/768/852×393)
+| Verifica | Esito |
+|---|---|
+| `store.js` sintassi, `exercises.json` valido (236 esercizi, PLANK Core senza video), CSS bilanciato | ✅ |
+| Dimensioni da CSS: testi, pill, note, carico ≥16px (solo le etichette MAIUSCOLE di obiettivo/info a 14px), nomi 17px, h1 fluido 20.8–33.6px, wrap max 680px | ✅ (da lettura del CSS) |
+| Misura nel browser sulla matrice 8 viewport (a capo titolo, font calcolati, overflow) | ❌ NON eseguita: Chrome headless in questo ambiente non ha caricato l'app (pagina bloccata; forse mancavano `--use-mock-keychain --password-store=basic`). Da rifare con quei flag o su telefono reale |
