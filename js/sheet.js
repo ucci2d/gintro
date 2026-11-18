@@ -44,7 +44,15 @@ export async function openSheet({ item = null, plan = null, onSave }) {
   let it = item ? { ...item } : null;   // esercizio scelto (null = fase ricerca)
   if (it) it._vids = exercises.find(e => e.id === it.exId)?.v || [];
   let orig = it ? { name: it.name, video: it.video, note: it.note } : null;   // valori all'apertura (per «Aggiorna in libreria?»)
-  let cat = '', q = '', added = 0;
+  let cat = '', q = '', added = 0, restored = false;
+  // Bozza dell'esercizio in compilazione: se il foglio si chiude per errore, riaprendolo (stessa scheda e stessa riga) ritrova i campi.
+  const DK = 'rakan:sheetdraft', myId = item?.id || null;
+  const saveDraft = () => { try { if (it) localStorage.setItem(DK, JSON.stringify({ planId: plan?.id || '', itemId: myId, it, t: Date.now() })); } catch {} };
+  const clearDraft = () => { try { localStorage.removeItem(DK); } catch {} };
+  try {
+    const d = JSON.parse(localStorage.getItem(DK) || 'null');
+    if (d?.it && d.planId === (plan?.id || '') && d.itemId === myId && Date.now() - d.t < 864e5) { it = d.it; orig = orig || { name: it.name, video: it.video, note: it.note }; restored = true; }
+  } catch {}
 
   const dlg = document.createElement('dialog');
   dlg.className = 'dlg sheet';
@@ -105,27 +113,30 @@ export async function openSheet({ item = null, plan = null, onSave }) {
       ${chipRow('tech', CHIPS.tech)}
       <div class="sh-row"><span class="sh-lab">Video (quello scelto va al cliente)</span><div class="sh-vids"></div><button type="button" class="btn sh-watch" data-a="watch" hidden>▶ Guarda il video scelto</button><div class="sh-vf"></div></div>
       <label class="sh-note">Nota tecnica<textarea class="inp" name="note" rows="2" placeholder="es. spalle basse, controlla le ginocchia">${esc(it.note)}</textarea></label>
-      <div class="sh-actions">${isEdit ? '<button type="button" class="btn" data-a="close">Annulla</button><button type="button" class="btn btn-accent" data-a="save">Salva</button>'
+      <div class="sh-actions">${isEdit ? '<button type="button" class="btn" data-a="cancel">Annulla</button><button type="button" class="btn btn-accent" data-a="save">Salva</button>'
         : '<button type="button" class="btn" data-a="again">Aggiungi e continua</button><button type="button" class="btn btn-accent" data-a="save">Aggiungi</button>'}</div></form>`;
     dlg.onclick = null;
     const f = dlg.querySelector('form');
+    if (restored) { restored = false; f.querySelector('.sh-head').insertAdjacentHTML('afterend', '<p class="sh-restored" role="status">Ho ritrovato i campi che stavi compilando.</p>'); }
+    saveDraft();
     if (it.exId) { try { localStorage.setItem('rakan:editing', JSON.stringify({ exId: it.exId, name: it.name, t: Date.now() })); } catch {} }
     const drawVids = () => {
       const vids = [...new Set([...(it._vids || []), it.video].filter(Boolean))];
       f.querySelector('.sh-vids').innerHTML = vids.length ? vids.map((v, i) => { const th = thumbOf(v); return `<button type="button" class="sh-vid" data-vid="${esc(v)}" aria-pressed="${it.video === v}" aria-label="Video ${i + 1}">${th ? `<img src="${esc(th)}" alt="" width="96" height="54" loading="lazy" onerror="this.remove()">` : ''}<small>Video ${i + 1}</small></button>`; }).join('') : '<p class="sh-sub">Nessun video: incolla un link qui sotto.</p>';
       f.querySelector('.sh-watch').hidden = !it.video;
     };
-    const vf = videoField({ getName: () => it.name, onChange: u => { if (!u) return; it._vids = [...new Set([...(it._vids || []), u])]; it.video = u; vf.clear(); drawVids(); } });
+    const vf = videoField({ getName: () => it.name, onChange: u => { if (!u) return; it._vids = [...new Set([...(it._vids || []), u])]; it.video = u; vf.clear(); saveDraft(); drawVids(); } });
     f.querySelector('.sh-vf').append(vf); drawVids();
     const sync = k => dlg.querySelectorAll(`[data-k="${k}"]`).forEach(b => b.setAttribute('aria-pressed', String(b.dataset.v === it[k])));
-    f.oninput = e => { const n = e.target.name; if (!n || n === 'url') return; it[n] = e.target.value; if (CHIPS[n]) sync(n); if (n === 'name') f.querySelector('.sh-name').textContent = it.name; };
+    f.oninput = e => { const n = e.target.name; if (!n || n === 'url') return; it[n] = e.target.value; saveDraft(); if (CHIPS[n]) sync(n); if (n === 'name') f.querySelector('.sh-name').textContent = it.name; };
     f.onclick = e => {
       const t = e.target.closest('button'); if (!t) return;
-      if (t.dataset.k) { const k = t.dataset.k; it[k] = it[k] === t.dataset.v ? '' : t.dataset.v; f[k].value = it[k]; return sync(k); }
-      if (t.dataset.vid) { it.video = t.dataset.vid; f.querySelector('.sh-watch').hidden = false; f.querySelectorAll('[data-vid]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.vid === it.video))); return; }
+      if (t.dataset.k) { const k = t.dataset.k; it[k] = it[k] === t.dataset.v ? '' : t.dataset.v; f[k].value = it[k]; saveDraft(); return sync(k); }
+      if (t.dataset.vid) { it.video = t.dataset.vid; saveDraft(); f.querySelector('.sh-watch').hidden = false; f.querySelectorAll('[data-vid]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.vid === it.video))); return; }
       if (t.dataset.a === 'watch') return playVideo(it.video, it.name);
+      if (t.dataset.a === 'cancel') { clearDraft(); return dlg.close(); }
       if (t.dataset.a === 'close') return dlg.close();
-      if (t.dataset.a === 'back') { it = null; return drawSearch(); }
+      if (t.dataset.a === 'back') { clearDraft(); it = null; return drawSearch(); }
       if (t.dataset.a === 'save' || t.dataset.a === 'again') return commit(t.dataset.a === 'again');
     };
   }
@@ -137,7 +148,7 @@ export async function openSheet({ item = null, plan = null, onSave }) {
     if (!out.name) return dlg.querySelector('[name="name"]')?.focus();
     if (out.exId && orig) { const ex = exercises.find(e => e.id === out.exId); const saved = await learn(orig, out, ex, exercises); if (saved) toast('Libreria aggiornata'); }
     if (out.exId) await store.put('lastRx', { id: out.exId, ...Object.fromEntries([...RX_FIELDS, 'note'].map(k => [k, out[k]])) });
-    onSave(out, { again });
+    clearDraft(); onSave(out, { again });
     if (again) { added++; it = null; q = ''; drawSearch(); dlg.querySelector('#sh-q')?.focus(); } else dlg.close();
   }
 

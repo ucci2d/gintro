@@ -3,6 +3,7 @@ import * as store from './store.js';
 import { exportBackupFile, importBackupFile } from './backup.js';
 import { toast } from './ui.js';
 import { canPrompt, onChange, promptInstall } from './install.js';
+import { getCfg, saveCfg, searchesToday, DEFAULT_KEYWORD } from './ytsearch.js';
 
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 export const SWATCHES = ['#0F766E', '#1D4ED8', '#7C3AED', '#BE123C', '#C2410C', '#14161A'];
@@ -26,6 +27,7 @@ export function resizeImage(file, max = 600) {
 
 export async function renderSettings(view, title, sub) {
   let s = await store.getSettings();
+  let yt = await getCfg();
   const save = patch => { s = { ...s, ...patch }; return Promise.resolve(store.saveSettings(s)).then(r => { toast('Salvato'); return r; }); };
   const draw = () => {
     view.innerHTML = `<h1 class="view-title">${title}</h1><p class="view-sub">${sub}</p>
@@ -44,6 +46,16 @@ export async function renderSettings(view, title, sub) {
       <label class="set-chk"><input type="checkbox" id="set-load" ${s.showLoadColumn !== false ? 'checked' : ''}>Mostra la colonna «Carico» da compilare a mano</label>
       <label class="set-chk"><input type="checkbox" id="set-qr" ${s.qrVideos ? 'checked' : ''}>QR code dei video nella stampa (un piccolo QR accanto a ogni esercizio, per chi stampa su carta)</label>
     </section>
+    <section class="set-card"><h2>Ricerca video YouTube</h2>
+      <label>Chiave API YouTube (resta solo su questo dispositivo, non finisce nei backup né nei link cliente)<input class="inp" id="yt-key" type="password" autocomplete="off" spellcheck="false" value="${esc(yt.key)}" placeholder="Incolla qui la chiave"></label>
+      <label>Parola chiave aggiunta alla ricerca<input class="inp" id="yt-kw" autocomplete="off" value="${esc(yt.keyword)}" placeholder="${DEFAULT_KEYWORD}"></label>
+      <p class="set-help">Ricerche fatte oggi: ${searchesToday(yt)} (limite gratuito: circa 100 al giorno).${yt.key ? ' <button type="button" class="btn" id="yt-rm">Rimuovi chiave</button>' : ''}</p>
+      <details class="set-help"><summary>Come ottenere la chiave gratuita (3 passi)</summary><ol>
+        <li>Vai su <a href="https://console.cloud.google.com/" target="_blank" rel="noopener">Google Cloud Console</a>, crea un progetto e abilita «YouTube Data API v3».</li>
+        <li>Credenziali → Crea credenziali → Chiave API.</li>
+        <li>Limita la chiave: «Referrer HTTP» <code>https://ucci2d.github.io/*</code> e solo l'API «YouTube Data API v3». Incollala qui sopra.</li></ol></details>
+      <p class="set-help">Senza chiave puoi sempre usare «Cerca su YouTube» (nuova scheda) e incollare il link.</p>
+    </section>
     <section class="set-card"><h2>Installa Rakan sul telefono</h2>
       <p class="set-help"><strong>iPhone</strong> (Safari): tocca Condividi → «Aggiungi alla schermata Home».</p>
       <p class="set-help"><strong>Android</strong> (Chrome): tocca ⋮ → «Installa app» o «Aggiungi a schermata Home».</p>
@@ -59,6 +71,10 @@ export async function renderSettings(view, title, sub) {
     view.querySelectorAll('[data-f]').forEach(el => { let t; el.oninput = () => { clearTimeout(t); t = setTimeout(() => save({ [el.dataset.f]: el.value.trim() }), 250); }; });
     view.querySelectorAll('.sw').forEach(b => b.onclick = async () => { await save({ accent: b.dataset.c }); draw(); });
     document.getElementById('set-color').onchange = async e => { await save({ accent: e.target.value }); draw(); };
+    const ytSave = patch => { yt = { ...yt, ...patch }; saveCfg(patch); };
+    let yt1; document.getElementById('yt-key').oninput = e => { clearTimeout(yt1); yt1 = setTimeout(() => { ytSave({ key: e.target.value.trim() }); toast('Salvato'); }, 300); };
+    let yt2; document.getElementById('yt-kw').oninput = e => { clearTimeout(yt2); yt2 = setTimeout(() => { ytSave({ keyword: e.target.value.trim() }); toast('Salvato'); }, 300); };
+    const ytrm = document.getElementById('yt-rm'); if (ytrm) ytrm.onclick = async () => { await saveCfg({ key: '' }); yt = await getCfg(); draw(); toast('Chiave rimossa'); };
     document.getElementById('set-load').onchange = e => save({ showLoadColumn: e.target.checked });
     document.getElementById('set-qr').onchange = e => save({ qrVideos: e.target.checked });
     document.getElementById('set-logo').onchange = async e => {

@@ -3,6 +3,7 @@ import * as store from './store.js';
 import { newItem, newBlock, fmtDate } from './editor.js';
 import { toast } from './ui.js';
 import { reminderHtml, computeStats, statsHtml } from './backup.js';
+import { badgeHtml, statusOf, boot, setResume } from './status.js';
 import { progressStep, applyProgression, nextWeek, hasRules } from './progress.js';
 
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -73,7 +74,7 @@ export async function renameTemplate(id, name) { const l = await personalTemplat
 export async function deleteTemplate(id) { await savePersonal((await personalTemplates()).filter(x => x.id !== id)); }
 
 export async function createPlan(client, from) {
-  const base = { clientId: client.id, title: `Programmazione ${client.name}`, date: today(), goal: client.goal || '', info: client.info || '', frequency: '', warmup: '', cooldown: '', finalNote: '', weekN: '', weekOf: '', days: [] };
+  const base = { clientId: client.id, title: `Programmazione ${client.name}`, date: today(), goal: client.goal || '', info: client.info || '', frequency: '', warmup: '', cooldown: '', finalNote: '', weekN: '', weekOf: '', status: 'bozza', sentAt: '', days: [] };
   if (from?.type === 'last') {
     const p = await store.get('plans', from.id);
     Object.assign(base, { goal: p.goal, info: p.info, frequency: p.frequency, warmup: p.warmup, cooldown: p.cooldown, finalNote: p.finalNote, weekN: p.weekN ? nextWeek(p) : '', weekOf: p.weekOf || '', days: cloneDays(p.days) });
@@ -195,30 +196,39 @@ export async function newPlanDialog(clientId) {
 }
 
 // ---- Viste ----
-const planCard = (p, name) => `<a class="pl-card" href="#scheda-${p.id}"><strong>${esc(p.title || 'Scheda')}</strong><span>${esc(name || '')} · ${fmtDate(p.date)}</span></a>`;
+const planCard = (p, name) => `<a class="pl-card" href="#scheda-${p.id}"><strong>${esc(p.title || 'Scheda')} ${badgeHtml(p)}</strong><span>${esc(name || '')} · ${fmtDate(p.date)}</span></a>`;
+const FILTERS = [['', 'Tutte'], ['bozza', 'Bozze'], ['pronta', 'Pronte'], ['inviata', 'Inviate']];
 
 export async function renderHome(view) {
   const [plans, clients] = await Promise.all([store.list('plans'), store.list('clients')]);
   const names = Object.fromEntries(clients.map(c => [c.id, c.name]));
   const sorted = plans.sort((a, b) => (b.updatedAt || '').localeCompare(a.updatedAt || ''));
   const many = sorted.length > 10;
-  let q = '';
+  let q = '', st = '';
+  const drafts = sorted.filter(p => statusOf(p) === 'bozza');
+  const resume = boot.resume && drafts.find(p => p.id === boot.resume); boot.resume = null; setResume(null);
   const listHtml = () => {
     const nq = store.normalize(q);
-    const rows = many ? (nq ? sorted.filter(p => store.normalize(`${p.title} ${names[p.clientId] || ''}`).includes(nq)) : sorted.slice(0, 10)) : sorted;
+    const pool = st ? sorted.filter(p => statusOf(p) === st) : sorted;
+    const rows = (many || st) ? (nq ? pool.filter(p => store.normalize(`${p.title} ${names[p.clientId] || ''}`).includes(nq)) : pool.slice(0, st ? 50 : 10)) : pool;
     return rows.length ? `<div class="pl-list">${rows.map(p => planCard(p, names[p.clientId])).join('')}</div>` : '<div class="empty"><strong>Nessun risultato</strong>Prova con un altro nome.</div>';
   };
   const remind = await reminderHtml();
   view.innerHTML = `<h1 class="view-title">Schede</h1><p class="view-sub">Le tue schede di allenamento</p>${remind}
+    ${resume ? `<a class="home-resume" href="#scheda-${resume.id}"><strong>Riprendi la bozza di ${esc(names[resume.clientId] || resume.title || 'scheda')}</strong><span>Eri a metà: tocca per continuare</span></a>` : ''}
     <button class="btn btn-accent home-new" data-act="new-plan">+ Nuova scheda</button>
     <div class="home-row"><button class="btn" data-act="new-client">+ Nuovo iscritto</button><a class="btn" href="#iscritti">Iscritti</a></div>
     ${clients.length || sorted.length ? statsHtml(computeStats(plans, clients)) : ''}
+    ${drafts.length ? `<h2 class="sec-title">Bozze</h2><div class="pl-list" id="home-drafts">${drafts.map(p => planCard(p, names[p.clientId])).join('')}</div>` : ''}
     <h2 class="sec-title">Schede recenti</h2>
+    ${sorted.length ? `<div class="chips" id="home-st">${FILTERS.map(([k, l]) => `<button type="button" class="chip chip-s" data-st="${k}" aria-pressed="${st === k}">${l}</button>`).join('')}</div>` : ''}
     ${many ? '<input class="inp home-q" id="home-q" type="search" placeholder="Cerca scheda o iscritto" autocomplete="off" aria-label="Cerca scheda o iscritto">' : ''}
     <div id="home-list">${sorted.length ? listHtml() : `<div class="empty"><strong>Nessuna scheda ancora</strong>${clients.length ? 'Scegli un iscritto e parti dall\'ultima scheda o da un modello.' : 'Aggiungi il primo iscritto, poi crea la sua scheda.'}<br><button class="btn btn-accent" style="margin-top:14px" data-act="${clients.length ? 'new-plan' : 'new-client'}">${clients.length ? '+ Nuova scheda' : '+ Nuovo iscritto'}</button></div>`}</div>`;
   const inp = view.querySelector('#home-q');
   if (inp) inp.oninput = () => { q = inp.value; view.querySelector('#home-list').innerHTML = listHtml(); };
   view.onclick = e => {
+    const f = e.target.closest('[data-st]');
+    if (f) { st = f.dataset.st; view.querySelectorAll('[data-st]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.st === st))); view.querySelector('#home-list').innerHTML = listHtml(); return; }
     const a = e.target.closest('[data-act]'); if (!a) return;
     if (a.dataset.act === 'new-plan') newPlanDialog();
     if (a.dataset.act === 'new-client') newClientDialog(() => renderHome(view));
