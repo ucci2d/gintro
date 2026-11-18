@@ -5,6 +5,7 @@ import { renderPreview, openPreview, printPlan, copyWhatsApp } from './doc.js';
 import { toast } from './ui.js';
 import { openShare } from './share.js';
 import { openQuick } from './quick.js';
+import { STATUSES, statusOf, markSent, boot, setResume } from './status.js';
 export { weekLabel } from './progress.js';
 
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -70,7 +71,7 @@ async function flush() {
 }
 window.addEventListener('pagehide', flush);
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') flush(); });
-window.addEventListener('hashchange', flush);
+window.addEventListener('hashchange', () => { flush(); if (!location.hash.startsWith('#scheda-')) setResume(null); });
 
 const curDay = () => plan.days[Math.min(day, plan.days.length - 1)];
 
@@ -79,6 +80,8 @@ export async function renderEditor(view, id) {
   const p = await store.get('plans', id);
   if (!p) { view.innerHTML = '<h1 class="view-title">Scheda</h1><div class="empty"><strong>Scheda non trovata</strong><a href="#schede">Torna alle schede</a></div>'; return; }
   plan = p; day = 0; root = view;
+  if (!plan.status) { plan.status = 'pronta'; }   // schede precedenti alla v1.5-0b: non sono bozze
+  boot.resume = null; setResume(plan.id);
   if (!plan.days?.length) plan.days = [{ id: store.uuid(), name: 'Giorno 1', blocks: [] }];
   // Intestazione aperta solo per la scheda vuota; chiusa se duplicata o da modello (si ricorda la scelta per la stessa scheda).
   if (headFor !== plan.id) { headFor = plan.id; openHead = !plan.days.some(d => d.blocks?.some(b => b.items?.length)); }
@@ -93,6 +96,7 @@ function draw() {
   const scrollY = window.scrollY;
   const d = curDay();
   root.innerHTML = `<div class="ed-split"><div class="ed-col"><div class="ed-top"><a href="#schede" class="ed-back" aria-label="Torna alle schede">‹ Schede</a><span id="ed-status" class="ed-status" role="status">Salvato</span></div>
+    <div class="ed-state"><span class="sh-lab">Stato</span>${STATUSES.map(([k, l]) => `<button type="button" class="chip chip-s" data-pst="${k}" aria-pressed="${statusOf(plan) === k}">${l}</button>`).join('')}${statusOf(plan) === 'inviata' ? `<label class="ed-sent">Inviata il<input class="inp" type="date" data-f="sentAt" value="${esc(plan.sentAt)}"></label>` : ''}</div>
     <div class="ed-tools"><button class="btn btn-accent" data-act="doc-share">Invia al cliente</button><button class="btn ed-btn-prev" data-act="doc-prev">Anteprima</button><button class="btn" data-act="doc-print">Stampa / PDF</button><button class="btn" data-act="doc-wa">Copia testo WhatsApp</button><button class="btn" data-act="plan-dup">Duplica con progressione</button><button class="btn" data-act="plan-tpl">Salva come modello</button></div>
     <details class="ed-head" ${openHead ? 'open' : ''}><summary>${esc(plan.title || 'Scheda')} <small>${esc(fmtDate(plan.date))}</small></summary>
       <div class="ed-grid">
@@ -157,19 +161,21 @@ function onClick(e) {
   if (!plan) return;
   const t = e.target.closest('button'); if (!t || !root.contains(t)) return;
   const d = curDay();
+  if (t.dataset.pst) { plan.status = t.dataset.pst; if (plan.status === 'inviata' && !plan.sentAt) plan.sentAt = new Date().toISOString().slice(0, 10); touch(); return draw(); }
   if (t.dataset.chip) { plan[t.dataset.chip] = t.dataset.v; const ta = root.querySelector(`[data-f="${t.dataset.chip}"]`); ta.value = t.dataset.v; touch(); return; }
   if (t.dataset.day != null) { day = +t.dataset.day; return draw(); }
   const act = t.dataset.act; if (!act) return;
   const sec = t.closest('.ed-block'), bi = sec ? +sec.dataset.b : -1, b = d.blocks[bi];
   const li = t.closest('.ed-item'), i = li ? +li.dataset.i : -1;
   const done = () => { touch(); draw(); };
+  const sent = () => { markSent(plan); touch(); draw(); };
   switch (act) {
     case 'doc-prev': return openPreview(plan);
-    case 'doc-print': return flush().then(() => printPlan(plan));
-    case 'doc-share': return flush().then(() => openShare(plan, () => printPlan(plan)));
+    case 'doc-print': sent(); return flush().then(() => printPlan(plan));
+    case 'doc-share': sent(); return flush().then(() => openShare(plan, () => printPlan(plan)));
     case 'plan-dup': return flush().then(() => import('./plans.js')).then(m => m.duplicateDialog(plan));
     case 'plan-tpl': return flush().then(() => import('./plans.js')).then(m => m.saveTemplateDialog(plan));
-    case 'doc-wa': return copyWhatsApp(plan).then(ok => { toast(ok ? 'Copiato' : 'Copia non riuscita'); });
+    case 'doc-wa': return copyWhatsApp(plan).then(ok => { toast(ok ? 'Copiato' : 'Copia non riuscita'); if (ok) sent(); });
     case 'day-add': plan.days.push({ id: store.uuid(), name: `Giorno ${plan.days.length + 1}`, blocks: [] }); day = plan.days.length - 1; return done();
     case 'day-ren': { const n = prompt('Nome del giorno', d.name); if (n?.trim()) { d.name = n.trim(); done(); } return; }
     case 'day-del':

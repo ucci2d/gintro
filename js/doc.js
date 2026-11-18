@@ -111,7 +111,7 @@ async function ctx(plan) {
 
 export async function renderPreview(el, plan) {
   const { s, client, link } = await ctx(plan);
-  el.innerHTML = buildDocHtml(plan, client, s, link);
+  el.innerHTML = (plan.status === 'bozza' ? '<p class="doc-draft" role="note">BOZZA · questo avviso compare solo qui, non nel documento del cliente</p>' : '') + buildDocHtml(plan, client, s, link);
 }
 
 export async function printPlan(plan) {
